@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{{title}}</title>
+  <link href="/common/style.css" rel="stylesheet" />
+  <!-- IMPORTANT: REMOVE the <script type="module" src="/common/func.js"></script> from here -->
+</head>
+
+<body>
+  {{{body}}}
+
+  <!-- 1. ADD Handlebars CDN (MUST be first) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+
+  <!-- 2. ADD Your Code (MUST be second) -->
+  <!-- Placing it here ensures Handlebars is defined and the DOM elements in {{{body}}} are ready -->
+  <script type="module" src="/common/func.js"></script>
+</body>
+
+</html>
