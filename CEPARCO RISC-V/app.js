@@ -13,17 +13,8 @@ server.engine('hbs', handlebars.engine({
 
 server.use(express.static('public'));
 
-const solutionVals = [
-    {"from":"1","to":"2"},
-    {"from":"2","to":"3"},
-    {"from":"3","to":"1"},
-    {"from":"2","to":"3"},
-    {"from":"1","to":"2"},
-    {"from":"2","to":"3"},
-    {"from":"3","to":"1"}];
-
 const registers = [
-    	{"register":"x0","data":"00000000"},
+    {"register":"x0","data":"00000000"},
 	{"register":"x1","data":"00000000"},
 	{"register":"x2","data":"00000000"},
 	{"register":"x3","data":"00000000"},
@@ -33,7 +24,7 @@ const registers = [
 	{"register":"x7","data":"00000000"},
 	{"register":"x8","data":"00000000"},
 	{"register":"x9","data":"00000000"},
-    	{"register":"x10","data":"00000000"},
+    {"register":"x10","data":"00000000"},
 	{"register":"x11","data":"00000000"},
 	{"register":"x12","data":"00000000"},
 	{"register":"x13","data":"00000000"},
@@ -43,7 +34,7 @@ const registers = [
 	{"register":"x17","data":"00000000"},
 	{"register":"x18","data":"00000000"},
 	{"register":"x19","data":"00000000"},
-    	{"register":"x20","data":"00000000"},
+    {"register":"x20","data":"00000000"},
 	{"register":"x21","data":"00000000"},
 	{"register":"x22","data":"00000000"},
 	{"register":"x23","data":"00000000"},
@@ -53,7 +44,7 @@ const registers = [
 	{"register":"x27","data":"00000000"},
 	{"register":"x28","data":"00000000"},
 	{"register":"x29","data":"00000000"},
-    	{"register":"x30","data":"00000000"},
+    {"register":"x30","data":"00000000"},
 	{"register":"x31","data":"00000000"},
 	{"register":"x32","data":"00000000"}
 ];
@@ -61,8 +52,7 @@ server.get('/', function(req, resp){
     resp.render('main',{
         layout: 'index',
         title: 'CEPARCO RISC-V',
-        solution: solutionVals,
-	registers: registers
+		registers: registers
     });
 });
 
