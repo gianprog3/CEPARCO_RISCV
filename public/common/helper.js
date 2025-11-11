@@ -174,13 +174,15 @@ export function assembleLine(instruction) {
         hexcode: '?'
     };
     if (op === 'LW') {
-
         assembleLWInstruction(data, instruction);
-
     }
 
     if (op === "SW") {
         assembleSWInstruction(data, instruction);
+    }
+
+    if (op === "ADD" || op === "SUB") {
+        assembleRTypeInstruction(data, instruction);
     }
 
     return data;
@@ -255,6 +257,29 @@ function assembleSWInstruction(data, instruction) {
     data.field11_7 = imm40Bin;
     data.field6_0 = opcodeBin;
     data.hexcode = hexcode;
+}
 
+function assembleRTypeInstruction(data, instruction) {
+    const op = instruction[0].toUpperCase();
+    const opcode = 0b0110011;
+    const funct3 = 0b000;     // same for ADD and SUB
+    const funct7 = op === "ADD" ? 0b0000000 : 0b0100000;
 
+    const rdBin  = registers.get(instruction[1]).toString(2).padStart(5, "0");
+    const rs1Bin = registers.get(instruction[2]).toString(2).padStart(5, "0");
+    const rs2Bin = registers.get(instruction[3]).toString(2).padStart(5, "0");
+    const funct3Bin = funct3.toString(2).padStart(3, "0");
+    const funct7Bin = funct7.toString(2).padStart(7, "0");
+    const opcodeBin = opcode.toString(2).padStart(7, "0");
+
+    const opcode32bit = funct7Bin + rs2Bin + rs1Bin + funct3Bin + rdBin + opcodeBin;
+    const hexcode = parseInt(opcode32bit, 2).toString(16).padStart(8, "0").toUpperCase();
+
+    data.field31_25 = funct7Bin;
+    data.field24_20 = rs2Bin;
+    data.field19_15 = rs1Bin;
+    data.field14_12 = funct3Bin;
+    data.field11_7  = rdBin;
+    data.field6_0   = opcodeBin;
+    data.hexcode    = hexcode;
 }
