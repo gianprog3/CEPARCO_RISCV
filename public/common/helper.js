@@ -185,6 +185,10 @@ export function assembleLine(instruction) {
         assembleRTypeInstruction(data, instruction);
     }
 
+    if (op === "ADDI") {
+        assembleADDIInstruction(data, instruction);
+    }
+
     return data;
 }
 
@@ -283,3 +287,42 @@ function assembleRTypeInstruction(data, instruction) {
     data.field6_0   = opcodeBin;
     data.hexcode    = hexcode;
 }
+
+function assembleADDIInstruction(data, instruction) {
+    const opcode = 0b0010011;
+    const funct3 = 0b000;
+
+    const rd = instruction[1];
+    const rs1 = instruction[2];
+    const immStr = instruction[3];
+
+    if (!registers.has(rd) || !registers.has(rs1)) {
+        data.hexcode = "ERROR";
+        return;
+    }
+
+    let imm;
+    if (immStr.startsWith("0x") || immStr.startsWith("-0x")) {
+        imm = parseInt(immStr, 16);
+    } else {
+        imm = parseInt(immStr, 10);
+    }
+
+    const immBin = (imm & 0xFFF).toString(2).padStart(12, "0");
+    const rs1Bin = registers.get(rs1).toString(2).padStart(5, "0");
+    const funct3Bin = funct3.toString(2).padStart(3, "0");
+    const rdBin = registers.get(rd).toString(2).padStart(5, "0");
+    const opcodeBin = opcode.toString(2).padStart(7, "0");
+
+    const opcode32bit = immBin + rs1Bin + funct3Bin + rdBin + opcodeBin;
+    const hexcode = parseInt(opcode32bit, 2).toString(16).padStart(8, "0").toUpperCase();
+
+    data.field31_25 = immBin.slice(0, 7);
+    data.field24_20 = immBin.slice(7, 12);
+    data.field19_15 = rs1Bin;
+    data.field14_12 = funct3Bin;
+    data.field11_7  = rdBin;
+    data.field6_0   = opcodeBin;
+    data.hexcode    = hexcode;
+}
+
