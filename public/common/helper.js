@@ -51,41 +51,12 @@ export function parseLines(text) {
 
 
 export function checkInstruction(instruction, index) {
-    let error;
-    switch (instruction[0]) {
-        case "LW":
-            error = lwInstruction(instruction, index);
-            break;
-
-        case "SW":
-            error = swInstruction(instruction, index);
-            break;
-
-        case "SUB":
-            if (instruction[1] === "ADD") {
-                error = subAddInstruction(instruction, index);
-                break;
-            }
-            else
-                return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
-
-        case "ADDI":
-            error = addiInstruction(instruction, index);
-            break;
-
-        case "BEQ":
-            error = beqInstruction(instruction, index);
-            break;
-
-        case "BNE":
-            error = bneInstruction(instruction, index);
-            break;
-
-        default:
-            return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
-    }
-
-    return error;
+    if (!(instruction[0] == "LW" || instruction[0] == "SW" || instruction[0] == "ADDI" || 
+	(instruction[0] == "SUB" && instruction[1] == "ADD") || instruction[0] == "BEQ" || 
+	instruction[0] == "BNE"))
+		return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
+		
+    return ``;
 }
 
 
