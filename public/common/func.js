@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				} else {
 					alert("Assembling Successful.");
 
-					const assembledInstructions = instructions.map(line => assembleLine(line));
+					const assembledInstructions = instructions.map(line => assembleLine(line, PC));
 
 					const context = {
 						assembledInstructions: assembledInstructions
