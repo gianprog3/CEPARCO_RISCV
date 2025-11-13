@@ -15,7 +15,10 @@ localhost:3000
 ## Integrating Project Milestone #1
 https://youtu.be/CYMEFEEJT-E
 
+In video: Test working opcodes, test errors
+
 Project update: 
 - Error handling and opcodes implemented
 - Registers implemented but not displayed yet
+
 
