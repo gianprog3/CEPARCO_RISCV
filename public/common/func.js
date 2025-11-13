@@ -1,59 +1,70 @@
 import { parseLines, checkInstruction, assembleLine } from "./helper.js";
 
-
 //assemble
+let PC = new Map ([
+
+		]);
+
 document.addEventListener('DOMContentLoaded', () => {
+	
+
 	const assembleButton = document.getElementById("assemble");
 	const text = document.getElementById("editorText");
 	const errorsText = document.getElementById("errorsText");
 
 	assembleButton.addEventListener("click", function () {
+		
+		PC = new Map([]);
+		let programCounter = 0x00000000;
 
 		const opcodeTableBody = document.getElementById("opcode-body");
 		const templateElement = document.getElementById("opcode-row-template");
 
-		if (!opcodeTableBody || !templateElement) {
-			console.error("CRITICAL: Could not find table body or template element!");
-			alert("Error: Table elements not found.");
-			return;
-		}
-
 		const templateSource = templateElement.textContent;
 
-		if (!templateSource || templateSource.trim() === "") {
-			console.error("CRITICAL: Template source is still blank!");
-			alert("Error: Template is blank.");
-			return;
-		}
-
-		// --- Compile the template *just in time* ---
 		const template = Handlebars.compile(templateSource);
 
-		// --- Your original logic ---
-		let errors = "";
-		errorsText.value = "";
-		opcodeTableBody.innerHTML = ""; // Clear table
+		for(let i = 0; i < 2; i++) {
+			let errors = "";
+			errorsText.value = "";
+			opcodeTableBody.innerHTML = "";
 
-		let codeLines = parseLines(text.value);
+			let codeLines = parseLines(text.value);
+			if (i == 0) {
+				for(let j = 0; j < codeLines.length; j++) {
+					PC.set(codeLines[j].toString(), programCounter);
+					programCounter += 4;
+				}
+			}
+			else {
+				let instructions = [];
 
-		codeLines.forEach((instruction, index) => {
-			errors += checkInstruction(instruction, index + 1);
-		});
+				codeLines.forEach((instruction) => {
+					if (!instruction.toString().endsWith(":")) {
+						instructions.push(instruction);
+						}
+				 });
 
-		if (errors != "") {
-			errorsText.value = errors;
-			alert("Errors Found.");
-		} else {
-			alert("Assembling Successful.");
+				instructions.forEach((instruction, index) => {
+					errors += checkInstruction(instruction, index + 1, PC);
+				});
 
-			const assembledInstructions = codeLines.map(line => assembleLine(line));
+				if (errors != "") {
+					errorsText.value = errors;
+					alert("Errors Found.");
+				} else {
+					alert("Assembling Successful.");
 
-			const context = {
-				assembledInstructions: assembledInstructions
-			};
+					const assembledInstructions = instructions.map(line => assembleLine(line));
 
-			const renderedHtml = template(context);
-			opcodeTableBody.innerHTML = renderedHtml;
+					const context = {
+						assembledInstructions: assembledInstructions
+					};
+
+					const renderedHtml = template(context);
+					opcodeTableBody.innerHTML = renderedHtml;
+				}
+			}
 		}
 	});
 

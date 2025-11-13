@@ -50,21 +50,36 @@ export function parseLines(text) {
 }
 
 
-export function checkInstruction(instruction, index) {
-    if (!(instruction[0] == "LW" || instruction[0] == "SW" || instruction[0] == "ADDI" || 
-	(instruction[0] == "SUB" && instruction[1] == "ADD") || instruction[0] == "BEQ" || 
-	instruction[0] == "BNE"))
-		return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
-		
-    return ``;
+export function checkInstruction(instruction, index, PC) {
+    let error;
+        if (instruction[0] == "LW" || instruction == "SW") {
+            error = lwswInstruction(instruction, index);
+        }
+        else if (instruction[0] == "SUB" || instruction == "ADD") {
+            error = subaddInstruction(instruction, index);
+        }
+        else if (instruction[0] == "ADDI") {
+            error = addiInstruction(instruction, index);
+        }
+        else if (instruction[0] == "BEQ" || instruction[0] == "BNE") {
+            error = beqbneInstruction(instruction, index, PC);
+            
+        }
+        else if (instruction[0].slice(-1) == ":") {
+            error = "";
+        }
+        else {
+            return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
+        }
+
+    return error;
 }
 
-
-function lwInstruction(instruction, index) {
+function lwswInstruction(instruction, index) {
     let errors = "";
 
     if (instruction.length != 3) {
-        errors += `Error on Line ${index}:\n Not enough parameters.`;
+        errors += `Error on Line ${index}:\n Incorrect number of parameters.`;
     }
 
     if (!registers.has(instruction[1])) {
@@ -95,39 +110,58 @@ function lwInstruction(instruction, index) {
     return errors;
 }
 
-function swInstruction(instruction, index) {
+function subaddInstruction(instruction, index) {
     let errors = "";
 
-    if (instruction.length != 3) {
-        errors += `Error on Line ${index}:\n Not enough parameters. \n\n`;
+    if(instruction.length != 4) {
+        errors += `Error on Line ${index}: \n Incorrect number of parameters. \n\n`;
+    }
+    if(!registers.has(instruction[1])) {
+        errors += `Error on Line ${index}: \n Register ${instruction[1]} is not a valid register. \n\n`;
+    }
+    if(!registers.has(instruction[2])) {
+        errors += `Error on Line ${index}: \n Register ${instruction[2]} is not a valid register. \n\n`;
+    }
+    if(!registers.has(instruction[3])) {
+        errors += `Error on Line ${index}: \n Register ${instruction[3]} is not a valid register. \n\n`;
     }
 
-    if (!registers.has(instruction[1])) {
-        errors += `Error on Line ${index}:\n ${instruction[1]} is not a valid register. \n\n`;
+    return errors;
+}
+
+function addiInstruction(instruction, index) {
+    let errors = "";
+    const rd = instruction[1];
+    const rs1 = instruction[2];
+
+    if (instruction.length != 4) {
+        errors += `Error on Line ${index}: \n Incorrect number of parameters. \n\n`;
+    }
+    if (!registers.has(rd)) {
+        errors += `Error on Line ${index}: \n Register ${rd} is not a valid register. \n\n`;
+    }
+    if (!registers.has(rs1)) {
+       errors += `Error on Line ${index}: \n Register ${rs1} is not a valid register. \n\n`;
     }
 
-    const param2 = instruction[2].match(/^(-?0x[0-9a-fA-F]+|-?\d+)\((x[0-9]|x1[0-9]|x2[0-9]|x3[01])\)$/);
+    return errors;
+}
 
-    if (!param2) {
-        errors += `Error on Line ${index}: \n ${instruction[2]} is not a valid parameter. \n\n`;
+function beqbneInstruction(instruction, index, PC) {
+    let errors = "";
+    if (instruction.length != 4) {
+        errors += `Error on Line ${index}: \n Incorrect number of parameters. \n\n`;
     }
-
-    let offset;
-
-    if (param2) {
-        const offsetStr = param2[1];
-        if (offsetStr.startsWith("0x") || offsetStr.startsWith("-0x")) {
-            offset = parseInt(offsetStr, 16);
-        } else {
-            offset = parseInt(offsetStr, 10);
-        }
-
-        if (offset < -2048 || offset > 2047) {
-            errors += `Error on Line ${index}: \n Offset ${offset} out of range (-2048 to 2047). \n\n`;
-
-        }
+    if(!registers.has(instruction[1])) {
+        errors += `Error on Line ${index}: \n Register ${instruction[1]} is not a valid register. \n\n`;
     }
-
+    if(!registers.has(instruction[2])) {
+        errors += `Error on Line ${index}: \n Register ${instruction[2]} is not a valid register. \n\n`;
+    }
+    let jmp = instruction[3] + ":";
+    if(!PC.has(jmp)) {
+        errors += `Error on Line ${index}: \n "${instruction[3]}" is not a valid branch \n\n`;
+    }
     return errors;
 }
 
@@ -158,6 +192,10 @@ export function assembleLine(instruction) {
 
     if (op === "ADDI") {
         assembleADDIInstruction(data, instruction);
+    }
+
+    if (op.slice[-1] === ":") {
+        return;
     }
 
     return data;
@@ -265,19 +303,6 @@ function assembleADDIInstruction(data, instruction) {
 
     const rd = instruction[1];
     const rs1 = instruction[2];
-    const immStr = instruction[3];
-
-    if (!registers.has(rd) || !registers.has(rs1)) {
-        data.hexcode = "ERROR";
-        return;
-    }
-
-    let imm;
-    if (immStr.startsWith("0x") || immStr.startsWith("-0x")) {
-        imm = parseInt(immStr, 16);
-    } else {
-        imm = parseInt(immStr, 10);
-    }
 
     const immBin = (imm & 0xFFF).toString(2).padStart(12, "0");
     const rs1Bin = registers.get(rs1).toString(2).padStart(5, "0");
