@@ -166,7 +166,7 @@ function beqbneInstruction(instruction, index, PC) {
 }
 
 
-export function assembleLine(instruction) {
+export function assembleLine(instruction, PC) {
     const op = instruction[0].toUpperCase();
     let data = {
         instructionName: instruction.join(' '), // e.g., "ADD R1, R2, R3"
@@ -197,6 +197,10 @@ export function assembleLine(instruction) {
     if (op.slice[-1] === ":") {
         return;
     }
+	
+	if (op === "BEQ" || op === "BNE") {
+		assembleBranchInstruction(data, instruction, PC);
+	}
 
     return data;
 }
@@ -303,6 +307,7 @@ function assembleADDIInstruction(data, instruction) {
 
     const rd = instruction[1];
     const rs1 = instruction[2];
+	const imm = instruction[3];
 
     const immBin = (imm & 0xFFF).toString(2).padStart(12, "0");
     const rs1Bin = registers.get(rs1).toString(2).padStart(5, "0");
@@ -322,3 +327,44 @@ function assembleADDIInstruction(data, instruction) {
     data.hexcode    = hexcode;
 }
 
+function assembleBranchInstruction(data, instruction, PC) {
+    const opcode = 0b1100011;
+	let funct3;
+	
+	if (instruction[0] === "BEQ")
+		funct3 = 0b000;
+	if (instruction[0] === "BNE")
+		funct3 = 0b001;
+
+	let jmp = instruction[3] + ":";
+	let toPC = PC.get(jmp);
+	let fromPC = PC.get(instruction[0] + "," + instruction[1] + "," + instruction[2] + "," + instruction[3]);
+	toPC = parseInt(toPC, 16);
+	fromPC = parseInt(fromPC, 16);
+	const intOffset = toPC - fromPC;		//get offset
+	const imm = intOffset >> 1;				//shift
+	const mask = (1 << 13) - 1;				//13 bit binary template
+    const unsignedValue = imm & mask;		//use template on imm
+    const immString = unsignedValue.toString(2).padStart(13, '0');
+
+    //get binary
+    let opcodeBin = opcode.toString(2).padStart(7, "0");
+    let rs1Bin = parseInt(registers.get(instruction[1])).toString(2).padStart(5, "0");
+    let funct3Bin = funct3.toString(2).padStart(3, "0");
+    let rs2Bin = parseInt(registers.get(instruction[2])).toString(2).padStart(5, "0");
+    let immBin = immString;
+
+	
+
+    let opcode32bit = immBin.slice(0,1) + immBin.slice(2,8) + rs2Bin + rs1Bin + 
+		funct3Bin + immBin.slice(8) + immBin.slice(1,2) + opcodeBin;
+    let hexcode = parseInt(opcode32bit, 2).toString(16).padStart(8, "0").toUpperCase();
+
+    data.field31_25 = immBin.slice(0,1) + immBin.slice(2,8);
+    data.field24_20 = rs2Bin;
+    data.field19_15 = rs1Bin;
+    data.field14_12 = funct3Bin;
+    data.field11_7 = immBin.slice(8,12) + immBin.slice(1,2);
+    data.field6_0 = opcodeBin;
+    data.hexcode = hexcode;
+}
