@@ -52,10 +52,10 @@ export function parseLines(text) {
 
 export function checkInstruction(instruction, index, PC) {
     let error;
-        if (instruction[0] == "LW" || instruction == "SW") {
+        if (instruction[0] == "LW" || instruction[0] == "SW") {
             error = lwswInstruction(instruction, index);
         }
-        else if (instruction[0] == "SUB" || instruction == "ADD") {
+        else if (instruction[0] == "SUB" || instruction[0] == "ADD") {
             error = subaddInstruction(instruction, index);
         }
         else if (instruction[0] == "ADDI") {
@@ -368,3 +368,4 @@ function assembleBranchInstruction(data, instruction, PC) {
     data.field6_0 = opcodeBin;
     data.hexcode = hexcode;
 }
+
