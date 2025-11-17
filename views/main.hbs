@@ -187,6 +187,7 @@
 			<button class="button" id="registers button">Registers</button>
 			<button class="button" id="memory button">Memory</button>
 			<button class="button" id="goto button">Goto</button>
+			<button class="button" id="set registers button">Set Registers</button>
 		</div>
 
 		<div class="content" id="registers">
@@ -198,7 +199,7 @@
 				{{#each registers}}
 				<tr>
 					<td>{{this.[0]}}</td>
-					<td>{{this.[1]}}</td>
+					<td><textarea class="textbox-register" id="{{this.[0]}}">{{this.[1]}}</textarea></td>
 				</tr>
 				{{/each}}
 			</table>
