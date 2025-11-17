@@ -6,7 +6,14 @@ let PC = new Map ([
 		]);
 
 document.addEventListener('DOMContentLoaded', () => {
-	
+	//default display
+	document.getElementById("editor").style.display = "flex";
+	document.getElementById("opcodes").style.display = "none";
+	document.getElementById("errors").style.display = "none";
+	document.getElementById("pipelines").style.display = "none";
+	document.getElementById("risc-v registers").style.display = "none";
+	document.getElementById("registers").style.display = "flex";
+	document.getElementById("memory").style.display = "none";
 
 	const assembleButton = document.getElementById("assemble");
 	const text = document.getElementById("editorText");
@@ -70,17 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		}
 	});
-
-
-
-
-	document.getElementById("editor").style.display = "flex";
-	document.getElementById("opcodes").style.display = "none";
-	document.getElementById("errors").style.display = "none";
-	document.getElementById("pipelines").style.display = "none";
-	document.getElementById("risc-v registers").style.display = "none";
-	document.getElementById("registers").style.display = "flex";
-	document.getElementById("memory").style.display = "none";
+	
+	document.getElementById("set registers button").onclick = function () {
+		const regs = document.getElementsByClassName("textbox-register");
+		for (let i=0; i<regs.length; i++) {	
+			const value = parseInt(regs[i].value, 16) || 0; // hex radix, 0 if invalid
+			registers.set(regs[i].id, value);
+		}
+		alert("Registers set.");
+	};
 
 	document.getElementById("editor button").onclick = function () {
 		document.getElementById("editor").style.display = "flex";
