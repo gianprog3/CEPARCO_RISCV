@@ -56,9 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					alert("Assembling Successful.");
 
 					const assembledInstructions = instructions.map(line => assembleLine(line, PC));
-
+					
+					const registersArray = Array.from(registers);
+					
 					const context = {
-						assembledInstructions: assembledInstructions
+						assembledInstructions: assembledInstructions,
+						registers: registersArray
 					};
 
 					const renderedHtml = template(context);
