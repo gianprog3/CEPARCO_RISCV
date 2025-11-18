@@ -124,8 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
 							
 						memory[startAddress + 3] = (opcode >>> 24) & 0xFF;  
 					});
-					
+
 					console.log(memory);
+					
 					const registersArray = Array.from(registers);
 
 					const context = {
