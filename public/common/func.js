@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					});
 
 					console.log(memory);
-					
+
 					const registersArray = Array.from(registers);
 
 					const context = {
@@ -152,11 +152,35 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 
 	document.getElementById("set memory button").onclick = function () {
-		const memory = document.getElementsByClassName("textbox-memory");
-		for (let i=0; i<memory.length; i++) {	
-			const value = parseInt(regs[i].value, 16) || 0;
-			memory[i] = value;
-		}
+		const memoryText = document.getElementsByClassName("textbox-memory");
+
+		for (let i = 0; i <= 127; i++) {
+            memory[i] = 0; 
+    	}
+
+		for (let i = 0; i < memoryText.length; i++) {
+        const currentAddress = i;
+        const hexValue = memoryText[i].value.trim();
+        
+			if (hexValue !== "") {
+
+				if (currentAddress % 4 !== 0) {
+                continue; // Skip to the next input field
+            	}
+				
+				const wordValue = parseInt(hexValue, 16);
+
+				memory[currentAddress] = (wordValue & 0xFF);         
+				
+				memory[currentAddress + 1] = (wordValue >>> 8) & 0xFF;   
+				
+				memory[currentAddress + 2] = (wordValue >>> 16) & 0xFF;
+
+				memory[currentAddress + 3] = (wordValue >>> 24) & 0xFF;  
+			}
+
+    	}
+		console.log(memory);
 		alert("Memory set.");
 	};
 
