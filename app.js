@@ -14,7 +14,6 @@ server.engine('hbs', handlebars.engine({
 server.use(express.static('public'));
 
 const registers = new Map([
-	["x0", "00000000"],
 	["x1", "00000000"],
 	["x2", "00000000"],
 	["x3", "00000000"],
