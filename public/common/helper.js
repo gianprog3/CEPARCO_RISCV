@@ -369,3 +369,18 @@ function assembleBranchInstruction(data, instruction, PC) {
     data.hexcode = hexcode;
 }
 
+
+//used for IF and LW
+export function readWord (address, memory) {
+    if (address < 0 || address > 0x00FC || (address % 4 !== 0)) {
+        return 0; 
+    }
+
+    return (
+        //or operation on each 2 bytes
+        memory[address] | // bytes 1 and 2
+        (memory[address + 1] << 8) //bytes 3 and 4
+        (memory[address + 2] << 16) // bytes 5 and 6
+        (memory[address + 3] << 24) // bytes 7 and 8
+    );
+}
