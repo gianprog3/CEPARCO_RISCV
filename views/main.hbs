@@ -188,6 +188,7 @@
 			<button class="button" id="memory button">Memory</button>
 			<button class="button" id="goto button">Goto</button>
 			<button class="button" id="set registers button">Set Registers</button>
+			<button class="button" id="set memory button">Set Memory</button>
 		</div>
 
 		<div class="content" id="registers">
@@ -214,6 +215,7 @@
 				{{#each memoryData}}
 				<tr>
 					<td>{{this}}</td>
+					<td><textarea class="textbox-memory">00000000</textarea></td>
 				</tr>
 				{{/each}}
 			</table>

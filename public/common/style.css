@@ -46,6 +46,7 @@
 	width:98%;
 }
 
+.textbox-memory,
 .textbox-register{
 	width:50%;
 	white-space:nowrap;

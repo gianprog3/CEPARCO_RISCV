@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById("risc-v registers").style.display = "none";
 	document.getElementById("registers").style.display = "flex";
 	document.getElementById("memory").style.display = "none";
+	document.getElementById("set memory button").style.display = "none";
 
 	const assembleButton = document.getElementById("assemble");
 	const text = document.getElementById("editorText");
@@ -118,12 +119,22 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	document.getElementById("set registers button").onclick = function () {
+	
 		const regs = document.getElementsByClassName("textbox-register");
 		for (let i=0; i<regs.length; i++) {	
 			const value = parseInt(regs[i].value, 16) || 0; // hex radix, 0 if invalid
 			registers.set(regs[i].id, value);
 		}
 		alert("Registers set.");
+	};
+
+	document.getElementById("set memory button").onclick = function () {
+		const memory = document.getElementsByClassName("textbox-memory");
+		for (let i=0; i<memory.length; i++) {	
+			const value = parseInt(regs[i].value, 16) || 0;
+			memory[i] = value;
+		}
+		alert("Memory set.");
 	};
 
 	document.getElementById("editor button").onclick = function () {
@@ -167,11 +178,15 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 
 	document.getElementById("registers button").onclick = function () {
+		document.getElementById("set memory button").style.display = "none";
+		document.getElementById("set registers button").style.display = "inline";
 		document.getElementById("registers").style.display = "flex";
 		document.getElementById("memory").style.display = "none";
 	};
 
 	document.getElementById("memory button").onclick = function () {
+		document.getElementById("set registers button").style.display = "none";
+		document.getElementById("set memory button").style.display = "inline";
 		document.getElementById("registers").style.display = "none";
 		document.getElementById("memory").style.display = "flex";
 	};
