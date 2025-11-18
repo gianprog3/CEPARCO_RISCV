@@ -338,7 +338,7 @@ function assembleBranchInstruction(data, instruction, PC) {
 
 	let jmp = instruction[3] + ":";
 	let toPC = PC.get(jmp);
-	let fromPC = PC.get(instruction[0] + "," + instruction[1] + "," + instruction[2] + "," + instruction[3]);
+	let fromPC = PC.get(instruction[0] + " " + instruction[1] + " " + instruction[2] + " " + instruction[3]);
 	toPC = parseInt(toPC, 16);
 	fromPC = parseInt(fromPC, 16);
 	const intOffset = toPC - fromPC;		//get offset
