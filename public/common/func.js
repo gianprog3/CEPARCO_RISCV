@@ -5,6 +5,8 @@ let PC = new Map ([
 
 		]);
 
+let programCounter;
+
 let registers = new Map ([
 	["x0", 0x00000000],
     ["x1", 0x00000000],
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	assembleButton.addEventListener("click", function () {
 		
 		PC = new Map([]);
-		let programCounter = 0x00000000;
+		programCounter = 0x00000080;
 
 		const opcodeTableBody = document.getElementById("opcode-body");
 		const templateElement = document.getElementById("opcode-row-template");
@@ -78,10 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			let codeLines = parseLines(text.value);
 			if (i == 0) {
-				for(let j = 0; j < codeLines.length; j++) {
-					PC.set(codeLines[j].toString(), programCounter);
-					programCounter += 4;
+				for (let j = 0; j < codeLines.length; j++) {
+					PC.set(codeLines[j].join(' '), programCounter);
+
+					if (!codeLines[j][0].endsWith(":")) {
+						programCounter += 4;
+					}
 				}
+				console.log(PC);
 			}
 			else {
 				let instructions = [];
@@ -103,9 +109,25 @@ document.addEventListener('DOMContentLoaded', () => {
 					alert("Assembling Successful.");
 
 					const assembledInstructions = instructions.map(line => assembleLine(line, PC));
+					assembledInstructions.forEach(instruction => {
+						let opcode = instruction.field31_25 + instruction.field24_20 + instruction.field19_15 + instruction.field14_12 + instruction.field11_7 + instruction.field6_0;
+						opcode = Number(BigInt('0b' + opcode))
+						console.log(PC.get(instruction.instructionName));
+						memory[PC.get(instruction.instructionName)] = opcode;
+						const startAddress = parseInt(PC.get(instruction.instructionName), 10);
+
+						memory[startAddress] = (opcode & 0xFF); 
+							
+						memory[startAddress + 1] = (opcode >>> 8) & 0xFF;   
+							
+						memory[startAddress + 2] = (opcode >>> 16) & 0xFF;  
+							
+						memory[startAddress + 3] = (opcode >>> 24) & 0xFF;  
+					});
 					
+					console.log(memory);
 					const registersArray = Array.from(registers);
-					
+
 					const context = {
 						assembledInstructions: assembledInstructions,
 						registers: registersArray
