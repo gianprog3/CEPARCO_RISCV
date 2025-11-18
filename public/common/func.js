@@ -40,6 +40,10 @@ let registers = new Map ([
     ["x31", 0x00000000]
 ]);
 
+//memory which has 256 spaces i.e. until 00FF
+//0000 - 007F data, 0080 - 00FF program
+let memory = new Array(256); 
+
 document.addEventListener('DOMContentLoaded', () => {
 	//default display
 	document.getElementById("editor").style.display = "flex";

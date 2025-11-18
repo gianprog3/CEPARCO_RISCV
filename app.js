@@ -47,11 +47,17 @@ const registers = new Map([
 	["x31", "00000000"]
 ]);
 
+let memoryData = new Array(128);
+
 
 server.get('/', function (req, resp) {
+	for (let i = 0; i < 128; i++){
+		memoryData[i] = i.toString(16).padStart(4, '0');
+	}
 	resp.render('main', {
 		layout: 'index',
 		title: 'CEPARCO RISC-V',
+		memoryData: memoryData,
 		registers: registers
 	});
 });
