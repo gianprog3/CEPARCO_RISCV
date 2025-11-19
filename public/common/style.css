@@ -1,6 +1,6 @@
 .body{
-	width:100vw;
-	height:100vh;
+	width:99vw;
+	height:98vh;
 	display:flex;
 	flex-direction:row;
 }
@@ -44,6 +44,7 @@
 
 .textbox{
 	width:98%;
+	resize:none;
 }
 
 .textbox-memory,
