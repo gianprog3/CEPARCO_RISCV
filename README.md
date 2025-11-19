@@ -23,6 +23,8 @@ Project update:
 
 ## Integrating Project Milestone #2
 
+https://youtu.be/6LRcJbgBTPQ
+
 Project update:
 - GUI for Registers/Memory
 - Set Registers/Memory
@@ -30,3 +32,4 @@ Project update:
   - Run Step / Run All
   - Pipeline Map
   - Initial Pipeline Registers (IR and NPC)
+
