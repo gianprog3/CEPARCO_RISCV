@@ -377,10 +377,40 @@ export function readWord (address, memory) {
     }
 
     return (
-        //or operation on each 2 bytes
-        memory[address] | // bytes 1 and 2
-        (memory[address + 1] << 8) //bytes 3 and 4
-        (memory[address + 2] << 16) // bytes 5 and 6
-        (memory[address + 3] << 24) // bytes 7 and 8
+        memory[address] |
+        (memory[address + 1] << 8) |
+        (memory[address + 2] << 16) |
+        (memory[address + 3] << 24)
     );
+}
+
+export function writeWord(address, value, memory) {
+    if (address < 0 || address > 0x7C || address % 4 !== 0) {
+        console.error("Invalid memory write address");
+        return;
+    }
+    memory[address] = value & 0xFF;
+    memory[address + 1] = (value >> 8) & 0xFF;
+    memory[address + 2] = (value >> 16) & 0xFF;
+    memory[address + 3] = (value >> 24) & 0xFF;
+}
+
+export function getImm(ir, type) {
+    let imm = 0;
+    if (type === 'I') { //addi
+        imm = ir >> 20;
+        if (imm & 0x800) imm -= 0x1000; // sign extend from 12 bits
+    } else if (type === 'S') {	//sw
+        imm = (ir >> 25) << 5 | ((ir >> 7) & 0x1F);
+        if (imm & 0x800) imm -= 0x1000;
+    } else if (type === 'B') { //beq bne
+        imm = ((ir >> 31) << 12) | (((ir >> 7) & 1) << 11) | (((ir >> 25) & 0x3F) << 5) | (((ir >> 8) & 0xF) << 1);
+        if (imm & 0x1000) imm -= 0x2000; // sign extend from 13 bits
+    }
+    return imm;
+}
+
+export function writesRd(ir) {
+    const opcode = ir & 0x7F;
+    return opcode === 0b0110011 || opcode === 0b0010011 || opcode === 0b0000011; // ADD, SUB, ADDI, LW
 }
