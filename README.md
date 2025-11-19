@@ -21,4 +21,12 @@ Project update:
 - Error handling and opcodes implemented
 - Registers implemented but not displayed yet
 
+## Integrating Project Milestone #2
 
+Project update:
+- GUI for Registers/Memory
+- Set Registers/Memory
+- Initial Pipeline drafting:
+  - Run Step / Run All
+  - Pipeline Map
+  - Initial Pipeline Registers (IR and NPC)
