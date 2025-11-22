@@ -186,6 +186,8 @@
 		<div class="button-bar">
 			<button class="button" id="registers button">Registers</button>
 			<button class="button" id="memory button">Memory</button>
+			<button class="button" id="view memory button">View Memory</button>
+			<textarea class="textbox-register" id="searchMemory">test</textarea>
 			<button class="button" id="goto button">Goto</button>
 			<button class="button" id="set registers button">Set Registers</button>
 			<button class="button" id="set memory button">Set Memory</button>
@@ -216,6 +218,20 @@
 				<tr>
 					<td>{{this}}</td>
 					<td><textarea class="textbox-memory">00000000</textarea></td>
+				</tr>
+				{{/each}}
+			</table>
+		</div>
+		<div class="content" id="view-memory">
+			<table>
+				<tr>
+					<th>Memory</th>
+					<th>Data</th>
+				</tr>
+				{{#each memory}}
+				<tr>
+					<td>{{this}}</td>
+					<td class="text-viewMemory">00</td>
 				</tr>
 				{{/each}}
 			</table>

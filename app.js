@@ -48,16 +48,20 @@ const registers = new Map([
 ]);
 
 let memoryData = new Array(128);
-
+let memory = new Array(256);
 
 server.get('/', function (req, resp) {
-	for (let i = 0; i < 128; i+=4){
+	for (let i = 0; i < 128; i += 4) {
 		memoryData[i] = i.toString(16).padStart(4, '0');
+	}
+	for (let i = 0; i < 256; i++) {
+		memory[i] = i.toString(16).padStart(4, '0');
 	}
 	resp.render('main', {
 		layout: 'index',
 		title: 'CEPARCO RISC-V',
 		memoryData: memoryData,
+		memory: memory,
 		registers: registers
 	});
 });

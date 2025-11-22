@@ -1,4 +1,4 @@
-export const NOP = 0x00000013;
+export const NOP = 0x00000000;
 
 export let IF = {
     IR: NOP,

@@ -52,25 +52,25 @@ export function parseLines(text) {
 
 export function checkInstruction(instruction, index, PC) {
     let error;
-        if (instruction[0] == "LW" || instruction[0] == "SW") {
-            error = lwswInstruction(instruction, index);
-        }
-        else if (instruction[0] == "SUB" || instruction[0] == "ADD") {
-            error = subaddInstruction(instruction, index);
-        }
-        else if (instruction[0] == "ADDI") {
-            error = addiInstruction(instruction, index);
-        }
-        else if (instruction[0] == "BEQ" || instruction[0] == "BNE") {
-            error = beqbneInstruction(instruction, index, PC);
-            
-        }
-        else if (instruction[0].slice(-1) == ":") {
-            error = "";
-        }
-        else {
-            return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
-        }
+    if (instruction[0] == "LW" || instruction[0] == "SW") {
+        error = lwswInstruction(instruction, index);
+    }
+    else if (instruction[0] == "SUB" || instruction[0] == "ADD") {
+        error = subaddInstruction(instruction, index);
+    }
+    else if (instruction[0] == "ADDI") {
+        error = addiInstruction(instruction, index);
+    }
+    else if (instruction[0] == "BEQ" || instruction[0] == "BNE") {
+        error = beqbneInstruction(instruction, index, PC);
+
+    }
+    else if (instruction[0].slice(-1) == ":") {
+        error = "";
+    }
+    else {
+        return `Error on Line ${index}:\n "${instruction[0]}" is not a valid instruction \n\n`;
+    }
 
     return error;
 }
@@ -113,16 +113,16 @@ function lwswInstruction(instruction, index) {
 function subaddInstruction(instruction, index) {
     let errors = "";
 
-    if(instruction.length != 4) {
+    if (instruction.length != 4) {
         errors += `Error on Line ${index}: \n Incorrect number of parameters. \n\n`;
     }
-    if(!registers.has(instruction[1])) {
+    if (!registers.has(instruction[1])) {
         errors += `Error on Line ${index}: \n Register ${instruction[1]} is not a valid register. \n\n`;
     }
-    if(!registers.has(instruction[2])) {
+    if (!registers.has(instruction[2])) {
         errors += `Error on Line ${index}: \n Register ${instruction[2]} is not a valid register. \n\n`;
     }
-    if(!registers.has(instruction[3])) {
+    if (!registers.has(instruction[3])) {
         errors += `Error on Line ${index}: \n Register ${instruction[3]} is not a valid register. \n\n`;
     }
 
@@ -141,7 +141,7 @@ function addiInstruction(instruction, index) {
         errors += `Error on Line ${index}: \n Register ${rd} is not a valid register. \n\n`;
     }
     if (!registers.has(rs1)) {
-       errors += `Error on Line ${index}: \n Register ${rs1} is not a valid register. \n\n`;
+        errors += `Error on Line ${index}: \n Register ${rs1} is not a valid register. \n\n`;
     }
 
     return errors;
@@ -152,14 +152,14 @@ function beqbneInstruction(instruction, index, PC) {
     if (instruction.length != 4) {
         errors += `Error on Line ${index}: \n Incorrect number of parameters. \n\n`;
     }
-    if(!registers.has(instruction[1])) {
+    if (!registers.has(instruction[1])) {
         errors += `Error on Line ${index}: \n Register ${instruction[1]} is not a valid register. \n\n`;
     }
-    if(!registers.has(instruction[2])) {
+    if (!registers.has(instruction[2])) {
         errors += `Error on Line ${index}: \n Register ${instruction[2]} is not a valid register. \n\n`;
     }
     let jmp = instruction[3] + ":";
-    if(!PC.has(jmp)) {
+    if (!PC.has(jmp)) {
         errors += `Error on Line ${index}: \n "${instruction[3]}" is not a valid branch \n\n`;
     }
     return errors;
@@ -197,10 +197,10 @@ export function assembleLine(instruction, PC) {
     if (op.slice[-1] === ":") {
         return;
     }
-	
-	if (op === "BEQ" || op === "BNE") {
-		assembleBranchInstruction(data, instruction, PC);
-	}
+
+    if (op === "BEQ" || op === "BNE") {
+        assembleBranchInstruction(data, instruction, PC);
+    }
 
     return data;
 }
@@ -282,7 +282,7 @@ function assembleRTypeInstruction(data, instruction) {
     const funct3 = 0b000;     // same for ADD and SUB
     const funct7 = op === "ADD" ? 0b0000000 : 0b0100000;
 
-    const rdBin  = registers.get(instruction[1]).toString(2).padStart(5, "0");
+    const rdBin = registers.get(instruction[1]).toString(2).padStart(5, "0");
     const rs1Bin = registers.get(instruction[2]).toString(2).padStart(5, "0");
     const rs2Bin = registers.get(instruction[3]).toString(2).padStart(5, "0");
     const funct3Bin = funct3.toString(2).padStart(3, "0");
@@ -296,9 +296,9 @@ function assembleRTypeInstruction(data, instruction) {
     data.field24_20 = rs2Bin;
     data.field19_15 = rs1Bin;
     data.field14_12 = funct3Bin;
-    data.field11_7  = rdBin;
-    data.field6_0   = opcodeBin;
-    data.hexcode    = hexcode;
+    data.field11_7 = rdBin;
+    data.field6_0 = opcodeBin;
+    data.hexcode = hexcode;
 }
 
 function assembleADDIInstruction(data, instruction) {
@@ -307,7 +307,7 @@ function assembleADDIInstruction(data, instruction) {
 
     const rd = instruction[1];
     const rs1 = instruction[2];
-	const imm = instruction[3];
+    const imm = instruction[3];
 
     const immBin = (imm & 0xFFF).toString(2).padStart(12, "0");
     const rs1Bin = registers.get(rs1).toString(2).padStart(5, "0");
@@ -322,28 +322,28 @@ function assembleADDIInstruction(data, instruction) {
     data.field24_20 = immBin.slice(7, 12);
     data.field19_15 = rs1Bin;
     data.field14_12 = funct3Bin;
-    data.field11_7  = rdBin;
-    data.field6_0   = opcodeBin;
-    data.hexcode    = hexcode;
+    data.field11_7 = rdBin;
+    data.field6_0 = opcodeBin;
+    data.hexcode = hexcode;
 }
 
 function assembleBranchInstruction(data, instruction, PC) {
     const opcode = 0b1100011;
-	let funct3;
-	
-	if (instruction[0] === "BEQ")
-		funct3 = 0b000;
-	if (instruction[0] === "BNE")
-		funct3 = 0b001;
+    let funct3;
 
-	let jmp = instruction[3] + ":";
-	let toPC = PC.get(jmp);
-	let fromPC = PC.get(instruction[0] + " " + instruction[1] + " " + instruction[2] + " " + instruction[3]);
-	toPC = parseInt(toPC, 16);
-	fromPC = parseInt(fromPC, 16);
-	const intOffset = toPC - fromPC;		//get offset
-	const imm = intOffset >> 1;				//shift
-	const mask = (1 << 13) - 1;				//13 bit binary template
+    if (instruction[0] === "BEQ")
+        funct3 = 0b000;
+    if (instruction[0] === "BNE")
+        funct3 = 0b001;
+
+    let jmp = instruction[3] + ":";
+    let toPC = PC.get(jmp);
+    let fromPC = PC.get(instruction[0] + " " + instruction[1] + " " + instruction[2] + " " + instruction[3]);
+    toPC = parseInt(toPC, 16);
+    fromPC = parseInt(fromPC, 16);
+    const intOffset = toPC - fromPC;		//get offset
+    const imm = intOffset >> 1;				//shift
+    const mask = (1 << 13) - 1;				//13 bit binary template
     const unsignedValue = imm & mask;		//use template on imm
     const immString = unsignedValue.toString(2).padStart(13, '0');
 
@@ -354,26 +354,26 @@ function assembleBranchInstruction(data, instruction, PC) {
     let rs2Bin = parseInt(registers.get(instruction[2])).toString(2).padStart(5, "0");
     let immBin = immString;
 
-	
 
-    let opcode32bit = immBin.slice(0,1) + immBin.slice(2,8) + rs2Bin + rs1Bin + 
-		funct3Bin + immBin.slice(8) + immBin.slice(1,2) + opcodeBin;
+
+    let opcode32bit = immBin.slice(0, 1) + immBin.slice(2, 8) + rs2Bin + rs1Bin +
+        funct3Bin + immBin.slice(8) + immBin.slice(1, 2) + opcodeBin;
     let hexcode = parseInt(opcode32bit, 2).toString(16).padStart(8, "0").toUpperCase();
 
-    data.field31_25 = immBin.slice(0,1) + immBin.slice(2,8);
+    data.field31_25 = immBin.slice(0, 1) + immBin.slice(2, 8);
     data.field24_20 = rs2Bin;
     data.field19_15 = rs1Bin;
     data.field14_12 = funct3Bin;
-    data.field11_7 = immBin.slice(8,12) + immBin.slice(1,2);
+    data.field11_7 = immBin.slice(8, 12) + immBin.slice(1, 2);
     data.field6_0 = opcodeBin;
     data.hexcode = hexcode;
 }
 
 
 //used for IF and LW
-export function readWord (address, memory) {
+export function readWord(address, memory) {
     if (address < 0 || address > 0x00FC || (address % 4 !== 0)) {
-        return 0; 
+        return 0;
     }
 
     return (
@@ -386,6 +386,7 @@ export function readWord (address, memory) {
 
 export function writeWord(address, value, memory) {
     if (address < 0 || address > 0x7C || address % 4 !== 0) {
+        console.log(address);
         console.error("Invalid memory write address");
         return;
     }

@@ -4,6 +4,7 @@ import { IF, ID, EX, MEM, WB, NOP } from "./stages.js";
 
 let cycle = 0;
 let pipelineMap = new Map();
+let pipelineRegisterMap = new Map();
 
 let currentPC = 0x00000080;
 let addressToInstr = new Map();
@@ -63,7 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById("risc-v registers").style.display = "none";
     document.getElementById("registers").style.display = "flex";
     document.getElementById("memory").style.display = "none";
+    document.getElementById("view-memory").style.display = "none";
     document.getElementById("set memory button").style.display = "none";
+    document.getElementById("goto button").style.display = "none";
+    document.getElementById("searchMemory").style.display = "none";
 
     const assembleButton = document.getElementById("assemble");
     const text = document.getElementById("editorText");
@@ -182,10 +186,34 @@ document.addEventListener('DOMContentLoaded', () => {
         loop();
     }
 
-	//Initialize pipeline registers
+    //Initialize pipeline registers
     function resetPipeline() {
         cycle = 0;
         pipelineMap.clear();
+
+        pipelineRegisterMap.clear();
+        pipelineRegisterMap.set("IF/ID.IR", []);
+        pipelineRegisterMap.set("IF/ID.NPC", []);
+        pipelineRegisterMap.set("IF/ID.PC", []);
+        pipelineRegisterMap.set(" ", []);
+        pipelineRegisterMap.set("ID/EX.A", []);
+        pipelineRegisterMap.set("ID/EX.B", []);
+        pipelineRegisterMap.set("ID/EX.IMM", []);
+        pipelineRegisterMap.set("ID/EX.IR", []);
+        pipelineRegisterMap.set("ID/EX.NPC", []);
+        pipelineRegisterMap.set("  ", []);
+        pipelineRegisterMap.set("EX/MEM.ALUOUTPUT", []);
+        pipelineRegisterMap.set("EX/MEM.IR", []);
+        pipelineRegisterMap.set("EX/MEM.B", []);
+        pipelineRegisterMap.set("EX/MEM.COND", []);
+        pipelineRegisterMap.set("   ", []);
+        pipelineRegisterMap.set("MEM/WB.LMD", []);
+        pipelineRegisterMap.set("MEM/WB.IR", []);
+        pipelineRegisterMap.set("MEM/WB.ALUOUTPUT", []);
+        pipelineRegisterMap.set("MEM[EX/MEM.ALUOUTPUT]", []);
+        pipelineRegisterMap.set("    ", []);
+        pipelineRegisterMap.set("REGS[MEM/WB.IR[rd]]", []);
+
         currentPC = 0x00000080;
         IF.IR = NOP;
         IF.NPC = 0x00000000;
@@ -212,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRiscVRegisters();
         updateRegistersTable();
         updateMemoryTable();
+        updateViewMemoryTable();
     }
 
     let thisIsABranchFlag = 0;  // flags if branching will occur
@@ -219,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function runStep() {
 
-        if(thisIsABranchFlag > 0){
+        if (thisIsABranchFlag > 0) {
             thisIsABranchFlag--;
         }
         // WB stage
@@ -258,31 +287,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (thisIsABranchFlag === 0 && branchTarget !== 0) {
-            if(currentPC < branchTarget){
+            if (currentPC < branchTarget) {
                 currentPC = branchTarget;
             }
-            if(IF.NPC < branchTarget){
-                IF.IR = NOP; 
-                IF.PC = 0; 
+            if (IF.NPC < branchTarget) {
+                IF.IR = NOP;
+                IF.PC = 0;
                 IF.NPC = 0;
             }
-            if(ID.NPC <= branchTarget){
-                ID.IR = NOP; 
-                ID.PC = 0; 
-                ID.NPC = 0; 
-                ID.A = 0; 
-                ID.B = 0; 
+            if (ID.NPC <= branchTarget) {
+                ID.IR = NOP;
+                ID.PC = 0;
+                ID.NPC = 0;
+                ID.A = 0;
+                ID.B = 0;
                 ID.IMM = 0;
             }
-            if(EX.PC - 4 <= branchTarget){
-                EX.IR = NOP; 
-                EX.PC = 0; 
-                EX.ALUOUTPUT = 0; 
-                EX.B = 0; 
+            if (EX.PC - 4 <= branchTarget) {
+                EX.IR = NOP;
+                EX.PC = 0;
+                EX.ALUOUTPUT = 0;
+                EX.B = 0;
                 EX.COND = 0;
             }
             branchTarget = 0;
-    }
+        }
 
         // MEM stage
         const exOpcode = EX.IR & 0x7F;
@@ -340,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (funct3 === 1) { // BNE
                         cond = (ID.A !== ID.B) ? 1 : 0;
                     }
-                    if (cond === 1 && thisIsABranchFlag === 0){
+                    if (cond === 1 && thisIsABranchFlag === 0) {
                         thisIsABranchFlag = 2;
                         branchTarget = ID.NPC + ID.IMM;
                     }
@@ -402,37 +431,60 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRiscVRegisters();
         updateRegistersTable();
         updateMemoryTable();
+        updateViewMemoryTable();
     }
 
 
     function recordStages() {
         if (IF.IR !== NOP && IF.IR !== 0 && IF.PC >= 0x00000080 && IF.PC < maxPC) {
             if (!pipelineMap.has(IF.PC)) {
-                pipelineMap.set(IF.PC, {startCycle: cycle, stages: new Map()});
+                pipelineMap.set(IF.PC, { startCycle: cycle, stages: new Map() });
             }
             pipelineMap.get(IF.PC).stages.set(cycle, 'IF');
         }
         if (ID.IR !== NOP && ID.IR !== 0 && ID.PC >= 0x00000080 && ID.PC < maxPC) {
             if (!pipelineMap.has(ID.PC)) {
-                pipelineMap.set(ID.PC, {startCycle: cycle, stages: new Map()});
+                pipelineMap.set(ID.PC, { startCycle: cycle, stages: new Map() });
             }
             pipelineMap.get(ID.PC).stages.set(cycle, 'ID');
         }
         if (EX.IR !== NOP && EX.IR !== 0 && EX.PC >= 0x00000080 && EX.PC < maxPC) {
             if (!pipelineMap.has(EX.PC)) {
-                pipelineMap.set(EX.PC, {startCycle: cycle, stages: new Map()});
+                pipelineMap.set(EX.PC, { startCycle: cycle, stages: new Map() });
             }
             pipelineMap.get(EX.PC).stages.set(cycle, 'EX');
         }
         if (MEM.IR !== NOP && MEM.IR !== 0 && MEM.PC >= 0x00000080 && MEM.PC < maxPC) {
             if (!pipelineMap.has(MEM.PC)) {
-                pipelineMap.set(MEM.PC, {startCycle: cycle, stages: new Map()});
+                pipelineMap.set(MEM.PC, { startCycle: cycle, stages: new Map() });
             }
             pipelineMap.get(MEM.PC).stages.set(cycle, 'MEM');
         }
         if (WB.PC !== 0x00000000 && WB.PC >= 0x00000080 && WB.PC < maxPC && pipelineMap.has(WB.PC)) {
             pipelineMap.get(WB.PC).stages.set(cycle, 'WB');
         }
+
+        pipelineRegisterMap.get("IF/ID.IR").push(IF.IR);
+        pipelineRegisterMap.get("IF/ID.NPC").push(IF.NPC);
+        pipelineRegisterMap.get("IF/ID.PC").push(IF.PC);
+
+        pipelineRegisterMap.get("ID/EX.A").push(ID.A);
+        pipelineRegisterMap.get("ID/EX.B").push(ID.B);
+        pipelineRegisterMap.get("ID/EX.IMM").push(ID.IMM);
+        pipelineRegisterMap.get("ID/EX.IR").push(ID.IR);
+        pipelineRegisterMap.get("ID/EX.NPC").push(ID.NPC);
+
+        pipelineRegisterMap.get("EX/MEM.ALUOUTPUT").push(EX.ALUOUTPUT);
+        pipelineRegisterMap.get("EX/MEM.IR").push(EX.IR);
+        pipelineRegisterMap.get("EX/MEM.B").push(EX.B);
+        pipelineRegisterMap.get("EX/MEM.COND").push(EX.COND);
+
+        pipelineRegisterMap.get("MEM/WB.LMD").push(MEM.LMD);
+        pipelineRegisterMap.get("MEM/WB.IR").push(MEM.IR);
+        pipelineRegisterMap.get("MEM/WB.ALUOUTPUT").push(MEM.ALUOUTPUT);
+        pipelineRegisterMap.get("MEM[EX/MEM.ALUOUTPUT]").push(MEM.MEMALUOUTPUT);
+
+        pipelineRegisterMap.get("REGS[MEM/WB.IR[rd]]").push(WB.Rn);
     }
 
     function updatePipelineMap() {
@@ -471,42 +523,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateRiscVRegisters() {
-        const table = document.getElementById("pipeline-regs-table");
-        if (!table) return;
-        table.innerHTML = '';
-        const thead = document.createElement('thead');
-        const tr = document.createElement('tr');
-        const thName = document.createElement('th');
-        thName.textContent = 'Register';
-        tr.appendChild(thName);
-        const thValue = document.createElement('th');
-        thValue.textContent = 'Value';
-        tr.appendChild(thValue);
-        thead.appendChild(tr);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        addRow(tbody, 'IF/ID.IR', (IF.IR >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'IF/ID.NPC', (IF.NPC >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'PC', (IF.PC >>> 0).toString(16).padStart(8, '0').toUpperCase()); // Displaying IF.PC as current PC
-        addRow(tbody, '', '');
-        addRow(tbody, 'ID/EX.A', (ID.A >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'ID/EX.B', (ID.B >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'ID/EX.IMM', (ID.IMM >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'ID/EX.IR', (ID.IR >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'ID/EX.NPC', (ID.NPC >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, '', '');
-        addRow(tbody, 'EX/MEM.ALUOUTPUT', (EX.ALUOUTPUT >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'EX/MEM.IR', (EX.IR >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'EX/MEM.B', (EX.B >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'EX/MEM.COND', EX.COND.toString());
-        addRow(tbody, '', '');
-        addRow(tbody, 'MEM/WB.LMD', (MEM.LMD >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'MEM/WB.IR', (MEM.IR >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'MEM/WB.ALUOUTPUT', (MEM.ALUOUTPUT >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, 'MEM[EX/MEM.ALUOUTPUT]', (MEM.MEMALUOUTPUT >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        addRow(tbody, '', '');
-        addRow(tbody, 'REGS[MEM/WB.IR[rd]]', (WB.Rn >>> 0).toString(16).padStart(8, '0').toUpperCase());
-        table.appendChild(tbody);
+        const pipelineTable = document.getElementById("pipeline-regs-table");
+        if (!pipelineTable) return;
+
+        pipelineTable.innerHTML = '';
+
+        // --- Header Setup (Cycle Numbers) ---
+        const tableHead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        const instructionHeaderCell = document.createElement('th');
+        instructionHeaderCell.textContent = 'Register';
+        headerRow.appendChild(instructionHeaderCell);
+
+        for (let currentCycle = 1; currentCycle <= cycle; currentCycle++) {
+            const cycleHeaderCell = document.createElement('th');
+            cycleHeaderCell.textContent = currentCycle.toString();
+            headerRow.appendChild(cycleHeaderCell);
+        }
+
+        tableHead.appendChild(headerRow);
+        pipelineTable.appendChild(tableHead);
+
+        // --- Body Setup (Latch Contents) ---
+        const tableBody = document.createElement('tbody');
+        const registerNames = Array.from(pipelineRegisterMap.keys());
+        for (const regName of registerNames) {
+            const history = pipelineRegisterMap.get(regName);
+            const rowTr = document.createElement('tr');
+
+            // Latch Name Cell
+            const tdName = document.createElement('td');
+            tdName.textContent = regName;
+            rowTr.appendChild(tdName);
+
+            // Cycle Data Cells
+            for (let currentCycle = 1; currentCycle <= cycle; currentCycle++) {
+                const td = document.createElement('td');
+                if (regName != " " && regName != "  " && regName != "   " && regName != "    ") {
+                    // Use array index (cycle - 1) since we used push()
+                    const entry = history[currentCycle - 1];
+                    if (regName == "EX/MEM.COND") {
+                        td.textContent = entry;
+                    }
+                    else if (regName == "MEM/WB.LMD" || regName == "MEM/WB.ALUOUTPUT" || regName == "MEM[EX/MEM.ALUOUTPUT]" || regName == "REGS[MEM/WB.IR[rd]]") {
+                        if (entry == 0) {
+                            console.log("flag");
+                            td.textContent = "N/A";
+                        }
+                        else {
+                            td.textContent = entry.toString(16).padStart(8, '0').toUpperCase();
+                        }
+                    }
+                    else {
+                        td.textContent = entry.toString(16).padStart(8, '0').toUpperCase();
+                    }
+                }
+
+                rowTr.appendChild(td);
+            }
+            tableBody.appendChild(rowTr);
+        }
+
+        pipelineTable.appendChild(tableBody);
     }
 
     function addRow(tbody, name, value) {
@@ -538,6 +616,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateMemoryTable() {
         const memoryText = document.getElementsByClassName("textbox-memory");
+        for (let i = 0; i < memoryText.length; i++) {
+            const addr = i * 4;
+            if (addr <= 0x7C) {
+                const word = readWord(addr, memory);
+                memoryText[i].value = (word >>> 0).toString(16).padStart(8, '0').toUpperCase();
+            }
+        }
+    }
+
+    function updateViewMemoryTable() {
+        const memoryText = document.getElementsByClassName("text-viewMemory");
         for (let i = 0; i < memoryText.length; i++) {
             const addr = i * 4;
             if (addr <= 0x7C) {
@@ -634,17 +723,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById("registers button").onclick = function () {
         document.getElementById("set memory button").style.display = "none";
+        document.getElementById("goto button").style.display = "none";
+        document.getElementById("searchMemory").style.display = "none";
         document.getElementById("set registers button").style.display = "inline";
         document.getElementById("registers").style.display = "flex";
+        document.getElementById("view-memory").style.display = "none";
         document.getElementById("memory").style.display = "none";
         updateRegistersTable(); // Refresh when switching
     };
 
     document.getElementById("memory button").onclick = function () {
         document.getElementById("set registers button").style.display = "none";
+        document.getElementById("goto button").style.display = "none";
+        document.getElementById("searchMemory").style.display = "none";
         document.getElementById("set memory button").style.display = "inline";
         document.getElementById("registers").style.display = "none";
+        document.getElementById("view-memory").style.display = "none";
         document.getElementById("memory").style.display = "flex";
         updateMemoryTable(); // Refresh when switching
     };
+
+    document.getElementById("view memory button").onclick = function () {
+        document.getElementById("set registers button").style.display = "none";
+        document.getElementById("set memory button").style.display = "none";
+        document.getElementById("goto button").style.display = "inline";
+        document.getElementById("searchMemory").style.display = "inline";
+        document.getElementById("registers").style.display = "none";
+        document.getElementById("view-memory").style.display = "flex";
+        document.getElementById("memory").style.display = "none";
+        updateViewMemoryTable();
+    }
 });
