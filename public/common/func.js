@@ -215,61 +215,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function runStep() {
-        // WB stage
-        const memOpcode = MEM.IR & 0x7F;
-        let memRd = (MEM.IR >> 7) & 0x1F;
-        WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
-        WB.PC = MEM.PC;
-        if (writesRd(MEM.IR) && memRd !== 0) {
-            registers.set(`x${memRd}`, WB.Rn);
-        }
+            // WB stage
+            const memOpcode = MEM.IR & 0x7F;
+            let memRd = (MEM.IR >> 7) & 0x1F;
+            WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
+            WB.PC = MEM.PC;
+            if (writesRd(MEM.IR) && memRd !== 0) {
+                registers.set(`x${memRd}`, WB.Rn);
+            }
 
-        // MEM stage
-        const exOpcode = EX.IR & 0x7F;
-        let newMEM = {
-            IR: EX.IR,
-            ALUOUTPUT: EX.ALUOUTPUT,
-            LMD: 0x00000000,
-            MEMALUOUTPUT: readWord(EX.ALUOUTPUT, memory),
-            PC: EX.PC
-        };
-        if (exOpcode === 0b0000011) { // LW
-            newMEM.LMD = newMEM.MEMALUOUTPUT;
-        } else if (exOpcode === 0b0100011) { // SW
-            writeWord(EX.ALUOUTPUT, EX.B, memory);
-        }
-        Object.assign(MEM, newMEM);
+            // Detect stall for the instruction in ID
+            let stall = false;
+            const idOpcode = ID.IR & 0x7F;
+            const idRs1 = (ID.IR >> 15) & 0x1F;
+            const idRs2 = (ID.IR >> 20) & 0x1F;
+            let usesRs1 = false;
+            let usesRs2 = false;
+            if (idOpcode === 0b0110011 || idOpcode === 0b1100011) { // ADD/SUB, BEQ/BNE
+                usesRs1 = true;
+                usesRs2 = true;
+            } else if (idOpcode === 0b0010011 || idOpcode === 0b0000011) { // ADDI, LW
+                usesRs1 = true;
+                usesRs2 = false;
+            } else if (idOpcode === 0b0100011) { // SW
+                usesRs1 = true;
+                usesRs2 = true;
+            }
+            const exRd = (EX.IR >> 7) & 0x1F;
+            memRd = (MEM.IR >> 7) & 0x1F;
+            if (writesRd(EX.IR) && exRd !== 0 && ((usesRs1 && idRs1 === exRd) || (usesRs2 && idRs2 === exRd))) {
+                stall = true;
+            }
+            if (writesRd(MEM.IR) && memRd !== 0 && ((usesRs1 && idRs1 === memRd) || (usesRs2 && idRs2 === memRd))) {
+                stall = true;
+            }
 
-        // Detect stall for the instruction in ID
-        let stall = false;
-        const idOpcode = ID.IR & 0x7F;
-        const idRs1 = (ID.IR >> 15) & 0x1F;
-        const idRs2 = (ID.IR >> 20) & 0x1F;
-        let usesRs1 = false;
-        let usesRs2 = false;
-        if (idOpcode === 0b0110011 || idOpcode === 0b1100011) { // ADD/SUB, BEQ/BNE
-            usesRs1 = true;
-            usesRs2 = true;
-        } else if (idOpcode === 0b0010011 || idOpcode === 0b0000011) { // ADDI, LW
-            usesRs1 = true;
-            usesRs2 = false;
-        } else if (idOpcode === 0b0100011) { // SW
-            usesRs1 = true;
-            usesRs2 = true;
-        }
-        const exRd = (EX.IR >> 7) & 0x1F;
-        memRd = (MEM.IR >> 7) & 0x1F;
-        if (writesRd(EX.IR) && exRd !== 0 && ((usesRs1 && idRs1 === exRd) || (usesRs2 && idRs2 === exRd))) {
-            stall = true;
-        }
-        if (writesRd(MEM.IR) && memRd !== 0 && ((usesRs1 && idRs1 === memRd) || (usesRs2 && idRs2 === memRd))) {
-            stall = true;
-        }
+            // MEM stage
+            const exOpcode = EX.IR & 0x7F;
+            let newMEM = {
+                IR: EX.IR,
+                ALUOUTPUT: EX.ALUOUTPUT,
+                LMD: 0x00000000,
+                MEMALUOUTPUT: readWord(EX.ALUOUTPUT, memory),
+                PC: EX.PC
+            };
+            if (exOpcode === 0b0000011) { // LW
+                newMEM.LMD = newMEM.MEMALUOUTPUT;
+            } else if (exOpcode === 0b0100011) { // SW
+                writeWord(EX.ALUOUTPUT, EX.B, memory);
+            }
+            Object.assign(MEM, newMEM);
 
-        // EX stage
-        let newEX = {
-            ALUOUTPUT: 0x00000000,
-            IR: NOP,
+            // EX stage
+            let newEX = {
+                ALUOUTPUT: 0x00000000,
+                IR: NOP,
             B: 0x00000000,
             COND: 0,
             PC: 0x00000000
