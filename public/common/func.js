@@ -231,25 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
             registers.set(`x${memRd}`, WB.Rn);
         }
 
-        if (thisIsABranchFlag === 0 && branchTarget !== 0) {
-        currentPC = branchTarget;
-        branchTarget = 0;
-        IF.IR = NOP; 
-        IF.PC = 0; 
-        IF.NPC = 0;
-        ID.IR = NOP; 
-        ID.PC = 0; 
-        ID.NPC = 0; 
-        ID.A = 0; 
-        ID.B = 0; 
-        ID.IMM = 0;
-        EX.IR = NOP; 
-        EX.PC = 0; 
-        EX.ALUOUTPUT = 0; 
-        EX.B = 0; 
-        EX.COND = 0;
-    }
-
         // Detect stall for the instruction in ID
         let stall = false;
         const idOpcode = ID.IR & 0x7F;
@@ -275,6 +256,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (writesRd(MEM.IR) && memRd !== 0 && ((usesRs1 && idRs1 === memRd) || (usesRs2 && idRs2 === memRd))) {
             stall = true;
         }
+
+        if (thisIsABranchFlag === 0 && branchTarget !== 0) {
+            if(currentPC < branchTarget){
+                currentPC = branchTarget;
+            }
+            if(IF.NPC < branchTarget){
+                IF.IR = NOP; 
+                IF.PC = 0; 
+                IF.NPC = 0;
+            }
+            if(ID.NPC <= branchTarget){
+                ID.IR = NOP; 
+                ID.PC = 0; 
+                ID.NPC = 0; 
+                ID.A = 0; 
+                ID.B = 0; 
+                ID.IMM = 0;
+            }
+            if(EX.PC - 4 <= branchTarget){
+                EX.IR = NOP; 
+                EX.PC = 0; 
+                EX.ALUOUTPUT = 0; 
+                EX.B = 0; 
+                EX.COND = 0;
+            }
+            branchTarget = 0;
+    }
 
         // MEM stage
         const exOpcode = EX.IR & 0x7F;
@@ -332,11 +340,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (funct3 === 1) { // BNE
                         cond = (ID.A !== ID.B) ? 1 : 0;
                     }
-                    if (cond === 1){
+                    if (cond === 1 && thisIsABranchFlag === 0){
                         thisIsABranchFlag = 2;
                         branchTarget = ID.NPC + ID.IMM;
                     }
-                    target = ID.NPC - 4 + ID.IMM;
+                    //target = ID.NPC - 4 + ID.IMM;
                     branchTaken = cond === 1;
                     break;
             }
