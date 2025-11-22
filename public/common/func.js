@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 maxPC = programCounter;
+                console.log(PC);
             }
             else {
                 let instructions = [];
@@ -130,12 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     assembledInstructions.forEach(instruction => {
                         let opcode = instruction.field31_25 + instruction.field24_20 + instruction.field19_15 + instruction.field14_12 + instruction.field11_7 + instruction.field6_0;
                         opcode = Number(BigInt('0b' + opcode));
+                        console.log(PC.get(instruction.instructionName));
                         const startAddress = parseInt(PC.get(instruction.instructionName), 10);
                         memory[startAddress] = (opcode & 0xFF);
                         memory[startAddress + 1] = (opcode >>> 8) & 0xFF;
                         memory[startAddress + 2] = (opcode >>> 16) & 0xFF;
                         memory[startAddress + 3] = (opcode >>> 24) & 0xFF;
                     });
+
+                    console.log(memory);
+
                     const registersArray = Array.from(registers);
 
                     const context = {
@@ -240,37 +245,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let thisIsABranchFlag = 0;  // flags if branching will occur
     let branchTarget = 0x00000000; // branch destination
+    let forceIFThisCycle = false;
+    let forcedIF = null;
 
     function runStep() {
+        
+    if (thisIsABranchFlag > 0) {
+        thisIsABranchFlag--;
+    }
 
-        if (thisIsABranchFlag > 0) {
-            thisIsABranchFlag--;
+    // WB Stage
+    const memOpcode = MEM.IR & 0x7F;
+    let memRd = (MEM.IR >> 7) & 0x1F;
+    WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
+    WB.PC = MEM.PC;
+    if (writesRd(MEM.IR) && memRd !== 0) {
+        registers.set(`x${memRd}`, WB.Rn);
+    }
+
+    // Branch instruction
+    if (thisIsABranchFlag === 0 && branchTarget !== 0) {
+
+        if (IF.PC !== 0 && IF.PC < branchTarget) {
+            IF.IR = NOP;
+            IF.PC = 0;
+            IF.NPC = 0;
         }
-        // WB stage
-        const memOpcode = MEM.IR & 0x7F;
-        let memRd = (MEM.IR >> 7) & 0x1F;
-        WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
-        WB.PC = MEM.PC;
-        if (writesRd(MEM.IR) && memRd !== 0) {
-            registers.set(`x${memRd}`, WB.Rn);
+        if (ID.PC !== 0 && ID.PC < branchTarget) {
+            ID.IR = NOP;
+            ID.PC = 0;
+            ID.NPC = 0;
+            ID.A = 0;
+            ID.B = 0;
+            ID.IMM = 0;
+        }
+        if (EX.PC !== 0 && EX.PC < branchTarget) {
+            EX.IR = NOP;
+            EX.PC = 0;
+            EX.ALUOUTPUT = 0;
+            EX.B = 0;
+            EX.COND = 0;
+        }
+        if (MEM.PC !== 0 && MEM.PC < branchTarget) {
+            MEM.IR = NOP;
+            MEM.PC = 0;
+            MEM.ALUOUTPUT = 0;
+            MEM.LMD = 0;
+            MEM.MEMALUOUTPUT = 0;
+        }
+        const targetAlreadyFetched =
+            (IF.PC !== 0 && IF.PC >= branchTarget) ||
+            (ID.PC !== 0 && ID.PC >= branchTarget) ||
+            (EX.PC !== 0 && EX.PC >= branchTarget) ||
+            (MEM.PC !== 0 && MEM.PC >= branchTarget);
+
+        if (!targetAlreadyFetched) {
+            const irAtTarget = readWord(branchTarget, memory);
+            forcedIF = {
+                IR: irAtTarget !== 0 ? irAtTarget : NOP,
+                PC: branchTarget,
+                NPC: branchTarget + 4
+            };
+            forceIFThisCycle = true;
+            currentPC = branchTarget + 4;
+        } else {
+            if (currentPC <= branchTarget) currentPC = branchTarget + 4;
+        }
+        branchTarget = 0;
         }
 
-        // Detect stall for the instruction in ID
+        // ID stage
         let stall = false;
         const idOpcode = ID.IR & 0x7F;
         const idRs1 = (ID.IR >> 15) & 0x1F;
         const idRs2 = (ID.IR >> 20) & 0x1F;
         let usesRs1 = false;
         let usesRs2 = false;
-        if (idOpcode === 0b0110011 || idOpcode === 0b1100011) { // ADD/SUB, BEQ/BNE
-            usesRs1 = true;
-            usesRs2 = true;
-        } else if (idOpcode === 0b0010011 || idOpcode === 0b0000011) { // ADDI, LW
-            usesRs1 = true;
-            usesRs2 = false;
+        if (idOpcode === 0b0110011 || idOpcode === 0b1100011) { // R-type or branch uses rs1 & rs2
+            usesRs1 = true; usesRs2 = true;
+        } else if (idOpcode === 0b0010011 || idOpcode === 0b0000011) { // I-type (ADDI) or LW
+            usesRs1 = true; usesRs2 = false;
         } else if (idOpcode === 0b0100011) { // SW
-            usesRs1 = true;
-            usesRs2 = true;
+            usesRs1 = true; usesRs2 = true;
         }
         const exRd = (EX.IR >> 7) & 0x1F;
         memRd = (MEM.IR >> 7) & 0x1F;
@@ -279,33 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (writesRd(MEM.IR) && memRd !== 0 && ((usesRs1 && idRs1 === memRd) || (usesRs2 && idRs2 === memRd))) {
             stall = true;
-        }
-
-        if (thisIsABranchFlag === 0 && branchTarget !== 0) {
-            if (currentPC < branchTarget) {
-                currentPC = branchTarget;
-            }
-            if (IF.NPC < branchTarget) {
-                IF.IR = NOP;
-                IF.PC = 0;
-                IF.NPC = 0;
-            }
-            if (ID.NPC <= branchTarget) {
-                ID.IR = NOP;
-                ID.PC = 0;
-                ID.NPC = 0;
-                ID.A = 0;
-                ID.B = 0;
-                ID.IMM = 0;
-            }
-            if (EX.PC - 4 <= branchTarget) {
-                EX.IR = NOP;
-                EX.PC = 0;
-                EX.ALUOUTPUT = 0;
-                EX.B = 0;
-                EX.COND = 0;
-            }
-            branchTarget = 0;
         }
 
         // MEM stage
@@ -333,7 +362,6 @@ document.addEventListener('DOMContentLoaded', () => {
             PC: 0x00000000
         };
         let branchTaken = false;
-        let target = 0x00000000;
         if (!stall) {
             const funct3 = (ID.IR >> 12) & 0x7;
             const funct7 = ID.IR >> 25;
@@ -342,36 +370,45 @@ document.addEventListener('DOMContentLoaded', () => {
             switch (idOpcode) {
                 case 0b0110011: // R-type ADD/SUB
                     if (funct3 === 0) {
-                        if (funct7 === 0) {
-                            aluOut = ID.A + ID.B;
-                        } else if (funct7 === 0b0100000) {
-                            aluOut = ID.A - ID.B;
-                        }
+                        if (funct7 === 0) aluOut = ID.A + ID.B;
+                        else if (funct7 === 0b0100000) aluOut = ID.A - ID.B;
                     }
                     break;
                 case 0b0010011: // ADDI
-                    if (funct3 === 0) {
-                        aluOut = ID.A + ID.IMM;
-                    }
+                    if (funct3 === 0) aluOut = ID.A + ID.IMM;
                     break;
                 case 0b0000011: // LW
                 case 0b0100011: // SW
                     aluOut = ID.A + ID.IMM;
                     break;
                 case 0b1100011: // BEQ/BNE
-                    if (funct3 === 0) { // BEQ
-                        cond = (ID.A === ID.B) ? 1 : 0;
-                    } else if (funct3 === 1) { // BNE
-                        cond = (ID.A !== ID.B) ? 1 : 0;
-                    }
+                    if (funct3 === 0) cond = (ID.A === ID.B) ? 1 : 0; // BEQ
+                    else if (funct3 === 1) cond = (ID.A !== ID.B) ? 1 : 0; // BNE
                     if (cond === 1 && thisIsABranchFlag === 0) {
                         thisIsABranchFlag = 2;
-                        branchTarget = ID.NPC + ID.IMM;
+                        const instrStr = addressToInstr.get(ID.PC);
+                        if (instrStr) {
+                            const parts = instrStr.trim().split(/\s+/);
+                            const labelOperand = parts[3] ? parts[3].replace(/:$/, "") : null;
+                            if (labelOperand) {
+                                const key = labelOperand + ":";
+                                const resolved = PC.get(key);
+                                if (resolved !== undefined) {
+                                    branchTarget = resolved;
+                                } else {
+                                    branchTarget = ID.NPC + ID.IMM;
+                                }
+                            } else {
+                                branchTarget = ID.NPC + ID.IMM;
+                            }
+                        } else {
+                            branchTarget = ID.NPC + ID.IMM;
+                        }
                     }
-                    //target = ID.NPC - 4 + ID.IMM;
                     branchTaken = cond === 1;
                     break;
             }
+
             newEX.ALUOUTPUT = aluOut;
             newEX.IR = ID.IR;
             newEX.B = ID.B;
@@ -405,7 +442,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // IF stage
         let newIF = { IR: NOP, NPC: 0x00000000, PC: 0x00000000 };
-        if (!stall && currentPC <= maxPC) {
+        if (forceIFThisCycle && forcedIF) {
+            newIF = { IR: forcedIF.IR, NPC: forcedIF.NPC, PC: forcedIF.PC };
+            forceIFThisCycle = false;
+            forcedIF = null;
+        } else if (!stall && currentPC <= maxPC) {
             const ir = readWord(currentPC, memory);
             newIF.IR = ir;
             if (ir !== 0) {
@@ -428,6 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMemoryTable();
         updateViewMemoryTable();
     }
+
+
 
 
     function recordStages() {
@@ -562,6 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     else if (regName == "MEM/WB.LMD" || regName == "MEM/WB.ALUOUTPUT" || regName == "MEM[EX/MEM.ALUOUTPUT]" || regName == "REGS[MEM/WB.IR[rd]]") {
                         if (entry == 0) {
+                            console.log("flag");
                             td.textContent = "N/A";
                         }
                         else {
@@ -579,6 +623,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         pipelineTable.appendChild(tableBody);
+    }
+
+    function addRow(tbody, name, value) {
+        if (name === '') {
+            const tr = document.createElement('tr');
+            tbody.appendChild(tr);
+            return;
+        }
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.textContent = name;
+        tr.appendChild(tdName);
+        const tdValue = document.createElement('td');
+        tdValue.textContent = value;
+        tr.appendChild(tdValue);
+        tbody.appendChild(tr);
     }
 
     function updateRegistersTable() {
@@ -604,24 +664,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateViewMemoryTable() {
-        const memoryText = document.getElementsByClassName("textbox-viewmemory");
-        const numWords = memoryText.length / 4;
-        for (let i = 0; i < numWords; i++) {
+        const memoryText = document.getElementsByClassName("text-viewMemory");
+        for (let i = 0; i < memoryText.length; i++) {
             const addr = i * 4;
-            const startIndex = i * 4;
-            const word = readWord(addr, memory);
-
-            const byte0 = (word >>> 0) & 0xFF; // Shift 0 (or no shift), then mask to 8 bits
-            memoryText[startIndex].value = byte0.toString(16).padStart(2, '0').toUpperCase();
-
-            const byte1 = (word >>> 8) & 0xFF; // Shift right 8 bits
-            memoryText[startIndex + 1].value = byte1.toString(16).padStart(2, '0').toUpperCase();
-
-            const byte2 = (word >>> 16) & 0xFF; // Shift right 16 bits
-            memoryText[startIndex + 2].value = byte2.toString(16).padStart(2, '0').toUpperCase();
-
-            const byte3 = (word >>> 24) & 0xFF; // Shift right 24 bits
-            memoryText[startIndex + 3].value = byte3.toString(16).padStart(2, '0').toUpperCase();
+            if (addr <= 0x7C) {
+                const word = readWord(addr, memory);
+                memoryText[i].value = (word >>> 0).toString(16).padStart(8, '0').toUpperCase();
+            }
         }
     }
 
@@ -664,6 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         }
+        console.log(memory);
         alert("Memory set.");
     };
 
