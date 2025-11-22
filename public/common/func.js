@@ -214,62 +214,88 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMemoryTable();
     }
 
+    let thisIsABranchFlag = 0;  // flags if branching will occur
+    let branchTarget = 0x00000000; // branch destination
+
     function runStep() {
-            // WB stage
-            const memOpcode = MEM.IR & 0x7F;
-            let memRd = (MEM.IR >> 7) & 0x1F;
-            WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
-            WB.PC = MEM.PC;
-            if (writesRd(MEM.IR) && memRd !== 0) {
-                registers.set(`x${memRd}`, WB.Rn);
-            }
 
-            // Detect stall for the instruction in ID
-            let stall = false;
-            const idOpcode = ID.IR & 0x7F;
-            const idRs1 = (ID.IR >> 15) & 0x1F;
-            const idRs2 = (ID.IR >> 20) & 0x1F;
-            let usesRs1 = false;
-            let usesRs2 = false;
-            if (idOpcode === 0b0110011 || idOpcode === 0b1100011) { // ADD/SUB, BEQ/BNE
-                usesRs1 = true;
-                usesRs2 = true;
-            } else if (idOpcode === 0b0010011 || idOpcode === 0b0000011) { // ADDI, LW
-                usesRs1 = true;
-                usesRs2 = false;
-            } else if (idOpcode === 0b0100011) { // SW
-                usesRs1 = true;
-                usesRs2 = true;
-            }
-            const exRd = (EX.IR >> 7) & 0x1F;
-            memRd = (MEM.IR >> 7) & 0x1F;
-            if (writesRd(EX.IR) && exRd !== 0 && ((usesRs1 && idRs1 === exRd) || (usesRs2 && idRs2 === exRd))) {
-                stall = true;
-            }
-            if (writesRd(MEM.IR) && memRd !== 0 && ((usesRs1 && idRs1 === memRd) || (usesRs2 && idRs2 === memRd))) {
-                stall = true;
-            }
+        if(thisIsABranchFlag > 0){
+            thisIsABranchFlag--;
+        }
+        // WB stage
+        const memOpcode = MEM.IR & 0x7F;
+        let memRd = (MEM.IR >> 7) & 0x1F;
+        WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
+        WB.PC = MEM.PC;
+        if (writesRd(MEM.IR) && memRd !== 0) {
+            registers.set(`x${memRd}`, WB.Rn);
+        }
 
-            // MEM stage
-            const exOpcode = EX.IR & 0x7F;
-            let newMEM = {
-                IR: EX.IR,
-                ALUOUTPUT: EX.ALUOUTPUT,
-                LMD: 0x00000000,
-                MEMALUOUTPUT: readWord(EX.ALUOUTPUT, memory),
-                PC: EX.PC
-            };
-            if (exOpcode === 0b0000011) { // LW
-                newMEM.LMD = newMEM.MEMALUOUTPUT;
-            } else if (exOpcode === 0b0100011) { // SW
-                writeWord(EX.ALUOUTPUT, EX.B, memory);
-            }
-            Object.assign(MEM, newMEM);
+        if (thisIsABranchFlag === 0 && branchTarget !== 0) {
+        currentPC = branchTarget;
+        branchTarget = 0;
+        IF.IR = NOP; 
+        IF.PC = 0; 
+        IF.NPC = 0;
+        ID.IR = NOP; 
+        ID.PC = 0; 
+        ID.NPC = 0; 
+        ID.A = 0; 
+        ID.B = 0; 
+        ID.IMM = 0;
+        EX.IR = NOP; 
+        EX.PC = 0; 
+        EX.ALUOUTPUT = 0; 
+        EX.B = 0; 
+        EX.COND = 0;
+    }
 
-            // EX stage
-            let newEX = {
-                ALUOUTPUT: 0x00000000,
-                IR: NOP,
+        // Detect stall for the instruction in ID
+        let stall = false;
+        const idOpcode = ID.IR & 0x7F;
+        const idRs1 = (ID.IR >> 15) & 0x1F;
+        const idRs2 = (ID.IR >> 20) & 0x1F;
+        let usesRs1 = false;
+        let usesRs2 = false;
+        if (idOpcode === 0b0110011 || idOpcode === 0b1100011) { // ADD/SUB, BEQ/BNE
+            usesRs1 = true;
+            usesRs2 = true;
+        } else if (idOpcode === 0b0010011 || idOpcode === 0b0000011) { // ADDI, LW
+            usesRs1 = true;
+            usesRs2 = false;
+        } else if (idOpcode === 0b0100011) { // SW
+            usesRs1 = true;
+            usesRs2 = true;
+        }
+        const exRd = (EX.IR >> 7) & 0x1F;
+        memRd = (MEM.IR >> 7) & 0x1F;
+        if (writesRd(EX.IR) && exRd !== 0 && ((usesRs1 && idRs1 === exRd) || (usesRs2 && idRs2 === exRd))) {
+            stall = true;
+        }
+        if (writesRd(MEM.IR) && memRd !== 0 && ((usesRs1 && idRs1 === memRd) || (usesRs2 && idRs2 === memRd))) {
+            stall = true;
+        }
+
+        // MEM stage
+        const exOpcode = EX.IR & 0x7F;
+        let newMEM = {
+            IR: EX.IR,
+            ALUOUTPUT: EX.ALUOUTPUT,
+            LMD: 0x00000000,
+            MEMALUOUTPUT: readWord(EX.ALUOUTPUT, memory),
+            PC: EX.PC
+        };
+        if (exOpcode === 0b0000011) { // LW
+            newMEM.LMD = newMEM.MEMALUOUTPUT;
+        } else if (exOpcode === 0b0100011) { // SW
+            writeWord(EX.ALUOUTPUT, EX.B, memory);
+        }
+        Object.assign(MEM, newMEM);
+
+        // EX stage
+        let newEX = {
+            ALUOUTPUT: 0x00000000,
+            IR: NOP,
             B: 0x00000000,
             COND: 0,
             PC: 0x00000000
@@ -306,6 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (funct3 === 1) { // BNE
                         cond = (ID.A !== ID.B) ? 1 : 0;
                     }
+                    if (cond === 1){
+                        thisIsABranchFlag = 2;
+                        branchTarget = ID.NPC + ID.IMM;
+                    }
                     target = ID.NPC - 4 + ID.IMM;
                     branchTaken = cond === 1;
                     break;
@@ -318,58 +348,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         Object.assign(EX, newEX);
 
-        if (branchTaken) {
-            currentPC = target;
-            IF.IR = NOP;
-            IF.NPC = 0x00000000;
-            IF.PC = 0x00000000;
-            ID.A = 0x00000000;
-            ID.B = 0x00000000;
-            ID.IMM = 0x00000000;
-            ID.IR = NOP;
-            ID.NPC = 0x00000000;
-            ID.PC = 0x00000000;
+        // ID stage
+        let newID = { A: 0x00000000, B: 0x00000000, IMM: 0x00000000, IR: NOP, NPC: 0x00000000, PC: 0x00000000 };
+        if (!stall) {
+            const ifIR = IF.IR;
+            const ifOpcode = ifIR & 0x7F;
+            const rs1 = (ifIR >> 15) & 0x1F;
+            const rs2 = (ifIR >> 20) & 0x1F;
+            let type = '';
+            if (ifOpcode === 0b0010011 || ifOpcode === 0b0000011) type = 'I';
+            if (ifOpcode === 0b0100011) type = 'S';
+            if (ifOpcode === 0b1100011) type = 'B';
+            const imm = getImm(ifIR, type);
+            newID.A = registers.get(`x${rs1}`) || 0;
+            newID.B = registers.get(`x${rs2}`) || 0;
+            newID.IMM = imm;
+            newID.IR = ifIR;
+            newID.NPC = IF.NPC;
+            newID.PC = IF.PC;
         } else {
-            // ID stage
-            let newID = { A: 0x00000000, B: 0x00000000, IMM: 0x00000000, IR: NOP, NPC: 0x00000000, PC: 0x00000000 };
-            if (!stall) {
-                const ifIR = IF.IR;
-                const ifOpcode = ifIR & 0x7F;
-                const rs1 = (ifIR >> 15) & 0x1F;
-                const rs2 = (ifIR >> 20) & 0x1F;
-                let type = '';
-                if (ifOpcode === 0b0010011 || ifOpcode === 0b0000011) type = 'I';
-                if (ifOpcode === 0b0100011) type = 'S';
-                if (ifOpcode === 0b1100011) type = 'B';
-                const imm = getImm(ifIR, type);
-                newID.A = registers.get(`x${rs1}`) || 0;
-                newID.B = registers.get(`x${rs2}`) || 0;
-                newID.IMM = imm;
-                newID.IR = ifIR;
-                newID.NPC = IF.NPC;
-                newID.PC = IF.PC;
-            } else {
-                newID = { ...ID };
-            }
-            Object.assign(ID, newID);
-
-            // IF stage
-            let newIF = { IR: NOP, NPC: 0x00000000, PC: 0x00000000 };
-            if (!stall && currentPC < maxPC) {
-                const ir = readWord(currentPC, memory);
-                newIF.IR = ir;
-                if (ir !== 0) {
-                    newIF.PC = currentPC;
-                    newIF.NPC = currentPC + 4;
-                    currentPC += 4;
-                } else {
-                    newIF.IR = NOP;
-                }
-            } else {
-                newIF = { ...IF };
-            }
-            Object.assign(IF, newIF);
+            newID = { ...ID };
         }
+        Object.assign(ID, newID);
+
+        // IF stage
+        let newIF = { IR: NOP, NPC: 0x00000000, PC: 0x00000000 };
+        if (!stall && currentPC <= maxPC) {
+            const ir = readWord(currentPC, memory);
+            newIF.IR = ir;
+            if (ir !== 0) {
+                newIF.PC = currentPC;
+                newIF.NPC = currentPC + 4;
+                currentPC += 4;
+            } else {
+                newIF.IR = NOP;
+            }
+        } else {
+            newIF = { ...IF };
+        }
+        Object.assign(IF, newIF);
 
         cycle++;
         recordStages();
@@ -378,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRegistersTable();
         updateMemoryTable();
     }
+
 
     function recordStages() {
         if (IF.IR !== NOP && IF.IR !== 0 && IF.PC >= 0x00000080 && IF.PC < maxPC) {
