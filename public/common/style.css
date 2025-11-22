@@ -1,75 +1,76 @@
-.body{
-	width:99vw;
-	height:98vh;
-	display:flex;
-	flex-direction:row;
+.body {
+	width: 99vw;
+	height: 98vh;
+	display: flex;
+	flex-direction: row;
 }
 
-.main{
-    width:100%;
-	height:100%;
-    display:flex;
-	flex-direction:column;
+.main {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
 }
 
-.side{
-	width:30%;
-	height:100%;
-	display:flex;
-	flex-direction:column;
+.side {
+	width: 30%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
 }
 
-.button-bar{
-	width:100%;
-	height:40px;
-	display:flex;
-	padding:5px;
+.button-bar {
+	width: 100%;
+	height: 40px;
+	display: flex;
+	padding: 5px;
 }
 
-.button{
-	width:80px;
-	margin-left:10px;
+.button {
+	width: 80px;
+	margin-left: 10px;
 }
 
-.button-spacer{
-	width:80px;
+.button-spacer {
+	width: 80px;
 }
 
-.content{
-	width:100%;
-	height:95%;
-	display:inline;
-	overflow:scroll;
+.content {
+	width: 100%;
+	height: 95%;
+	display: inline;
+	overflow: scroll;
 }
 
-.textbox{
-	width:98%;
-	resize:none;
+.textbox {
+	width: 98%;
+	resize: none;
 }
 
 .textbox-memory,
-.textbox-register{
-	width:50%;
-	white-space:nowrap;
-	overflow-y:hidden;
-	rows:1;
-	resize:none;
+.textbox-register,
+.textbox-viewmemory {
+	width: 50%;
+	white-space: nowrap;
+	overflow-y: hidden;
+	rows: 1;
+	resize: none;
 }
 
-table{
-  width:100%;
+table {
+	width: 100%;
 }
 
-tr{
-  width:auto;
-  height:20px;
-  text-align: center;
+tr {
+	width: auto;
+	height: 20px;
+	text-align: center;
 }
 
-tr:nth-child(even){
-	background-color:#f0f0f0;
+tr:nth-child(even) {
+	background-color: #f0f0f0;
 }
 
-tr:hover{
-	background-color:#dddddd;
+tr:hover {
+	background-color: #dddddd;
 }

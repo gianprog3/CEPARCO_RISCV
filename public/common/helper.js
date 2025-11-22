@@ -356,15 +356,15 @@ function assembleBranchInstruction(data, instruction, PC) {
 
 
 
-    let opcode32bit = immBin.slice(0, 1) + immBin.slice(2, 8) + rs2Bin + rs1Bin +
-        funct3Bin + immBin.slice(8) + immBin.slice(1, 2) + opcodeBin;
+    let opcode32bit = immBin.slice(0, 7) + rs2Bin + rs1Bin +
+        funct3Bin + immBin.slice(7) + opcodeBin;
     let hexcode = parseInt(opcode32bit, 2).toString(16).padStart(8, "0").toUpperCase();
 
-    data.field31_25 = immBin.slice(0, 1) + immBin.slice(2, 8);
+    data.field31_25 = immBin.slice(0, 7);
     data.field24_20 = rs2Bin;
     data.field19_15 = rs1Bin;
     data.field14_12 = funct3Bin;
-    data.field11_7 = immBin.slice(8, 12) + immBin.slice(1, 2);
+    data.field11_7 = immBin.slice(7);
     data.field6_0 = opcodeBin;
     data.hexcode = hexcode;
 }
@@ -386,7 +386,6 @@ export function readWord(address, memory) {
 
 export function writeWord(address, value, memory) {
     if (address < 0 || address > 0x7C || address % 4 !== 0) {
-        console.log(address);
         console.error("Invalid memory write address");
         return;
     }

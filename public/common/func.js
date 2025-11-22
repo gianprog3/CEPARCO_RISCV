@@ -100,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 maxPC = programCounter;
-                console.log(PC);
             }
             else {
                 let instructions = [];
@@ -131,16 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     assembledInstructions.forEach(instruction => {
                         let opcode = instruction.field31_25 + instruction.field24_20 + instruction.field19_15 + instruction.field14_12 + instruction.field11_7 + instruction.field6_0;
                         opcode = Number(BigInt('0b' + opcode));
-                        console.log(PC.get(instruction.instructionName));
                         const startAddress = parseInt(PC.get(instruction.instructionName), 10);
                         memory[startAddress] = (opcode & 0xFF);
                         memory[startAddress + 1] = (opcode >>> 8) & 0xFF;
                         memory[startAddress + 2] = (opcode >>> 16) & 0xFF;
                         memory[startAddress + 3] = (opcode >>> 24) & 0xFF;
                     });
-
-                    console.log(memory);
-
                     const registersArray = Array.from(registers);
 
                     const context = {
@@ -567,7 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     else if (regName == "MEM/WB.LMD" || regName == "MEM/WB.ALUOUTPUT" || regName == "MEM[EX/MEM.ALUOUTPUT]" || regName == "REGS[MEM/WB.IR[rd]]") {
                         if (entry == 0) {
-                            console.log("flag");
                             td.textContent = "N/A";
                         }
                         else {
@@ -585,22 +579,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         pipelineTable.appendChild(tableBody);
-    }
-
-    function addRow(tbody, name, value) {
-        if (name === '') {
-            const tr = document.createElement('tr');
-            tbody.appendChild(tr);
-            return;
-        }
-        const tr = document.createElement('tr');
-        const tdName = document.createElement('td');
-        tdName.textContent = name;
-        tr.appendChild(tdName);
-        const tdValue = document.createElement('td');
-        tdValue.textContent = value;
-        tr.appendChild(tdValue);
-        tbody.appendChild(tr);
     }
 
     function updateRegistersTable() {
@@ -626,13 +604,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateViewMemoryTable() {
-        const memoryText = document.getElementsByClassName("text-viewMemory");
-        for (let i = 0; i < memoryText.length; i++) {
+        const memoryText = document.getElementsByClassName("textbox-viewmemory");
+        const numWords = memoryText.length / 4;
+        for (let i = 0; i < numWords; i++) {
             const addr = i * 4;
-            if (addr <= 0x7C) {
-                const word = readWord(addr, memory);
-                memoryText[i].value = (word >>> 0).toString(16).padStart(8, '0').toUpperCase();
-            }
+            const startIndex = i * 4;
+            const word = readWord(addr, memory);
+
+            const byte0 = (word >>> 0) & 0xFF; // Shift 0 (or no shift), then mask to 8 bits
+            memoryText[startIndex].value = byte0.toString(16).padStart(2, '0').toUpperCase();
+
+            const byte1 = (word >>> 8) & 0xFF; // Shift right 8 bits
+            memoryText[startIndex + 1].value = byte1.toString(16).padStart(2, '0').toUpperCase();
+
+            const byte2 = (word >>> 16) & 0xFF; // Shift right 16 bits
+            memoryText[startIndex + 2].value = byte2.toString(16).padStart(2, '0').toUpperCase();
+
+            const byte3 = (word >>> 24) & 0xFF; // Shift right 24 bits
+            memoryText[startIndex + 3].value = byte3.toString(16).padStart(2, '0').toUpperCase();
         }
     }
 
@@ -675,7 +664,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         }
-        console.log(memory);
         alert("Memory set.");
     };
 
