@@ -705,8 +705,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const memoryLoc = document.getElementById("searchMemory").value;
         const index = parseInt(memoryLoc, 16);
-
-        if (index < 0 || index > 256 || !index) {
+        console.log(index);
+        if (index < 0 || index > 256 || Number.isNaN(index)) {
             alert(`"${memoryLoc}" is not a valid memory location`);
         } else {
             const memoryTable = document.getElementById("memory-" + index);
