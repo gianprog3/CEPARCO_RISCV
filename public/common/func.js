@@ -566,7 +566,15 @@ document.addEventListener('DOMContentLoaded', () => {
             rowTr.appendChild(tdInstr);
             for (let c = 1; c <= cycle; c++) {
                 const td = document.createElement('td');
-                td.textContent = entry.stages.get(c) || '';
+                let stage = entry.stages.get(c) || '';
+                if (stage !== '') {
+                    const prevStage = entry.stages.get(c - 1);
+                    if (prevStage === stage) {
+                        stage = "*";
+                    }
+                }
+                td.textContent = stage;
+
                 rowTr.appendChild(td);
             }
             tbody.appendChild(rowTr);
