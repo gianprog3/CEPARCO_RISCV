@@ -261,12 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Branch instruction
         if (thisIsABranchFlag === 0 && branchTarget !== 0) {
 
-            if (IF.PC !== 0 && IF.PC < branchTarget) {
+            if (IF.NPC !== 0 && IF.NPC < branchTarget) {
                 IF.IR = NOP;
                 IF.PC = 0;
                 IF.NPC = 0;
             }
-            if (ID.PC !== 0 && ID.PC < branchTarget) {
+            if (ID.NPC !== 0 && ID.NPC < branchTarget) {
                 ID.IR = NOP;
                 ID.PC = 0;
                 ID.NPC = 0;
@@ -289,8 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 MEM.MEMALUOUTPUT = 0;
             }
             const targetAlreadyFetched =
-                (IF.PC !== 0 && IF.PC >= branchTarget) ||
-                (ID.PC !== 0 && ID.PC >= branchTarget) ||
+                (IF.NPC !== 0 && IF.NPC >= branchTarget) ||
+                (ID.NPC !== 0 && ID.NPC >= branchTarget) ||
                 (EX.PC !== 0 && EX.PC >= branchTarget) ||
                 (MEM.PC !== 0 && MEM.PC >= branchTarget);
 
@@ -298,8 +298,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const irAtTarget = readWord(branchTarget, memory);
                 forcedIF = {
                     IR: irAtTarget !== 0 ? irAtTarget : NOP,
-                    PC: branchTarget,
-                    NPC: branchTarget + 4
+                    PC: branchTarget + 4,
+                    NPC: branchTarget
                 };
                 forceIFThisCycle = true;
                 currentPC = branchTarget + 4;
@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (funct3 === 1) cond = (ID.A !== ID.B) ? 1 : 0; // BNE
                     if (cond === 1 && thisIsABranchFlag === 0) {
                         thisIsABranchFlag = 2;
-                        const instrStr = addressToInstr.get(ID.PC);
+                        const instrStr = addressToInstr.get(ID.NPC);
                         if (instrStr) {
                             const parts = instrStr.trim().split(/\s+/);
                             const labelOperand = parts[3] ? parts[3].replace(/:$/, "") : null;
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newEX.IR = ID.IR;
             newEX.B = ID.B;
             newEX.COND = cond;
-            newEX.PC = ID.PC;
+            newEX.PC = ID.NPC;
         }
         Object.assign(EX, newEX);
 
@@ -446,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (idOpcode === 0b1100011) type = 'B';
 
             const imm = getImm(idIR, type);
+
             newID.A = registers.get(`x${rs1}`) || 0;
             newID.B = registers.get(`x${rs2}`) || 0;
             newID.IMM = imm;
@@ -462,8 +463,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const ir = readWord(currentPC, memory);
             newIF.IR = ir;
             if (ir !== 0) {
-                newIF.PC = currentPC;
-                newIF.NPC = currentPC + 4;
+                newIF.PC = currentPC + 4;
+                newIF.NPC = currentPC;
                 currentPC += 4;
             } else {
                 newIF.IR = NOP;
@@ -484,17 +485,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function recordStages() {
-        if (IF.IR !== NOP && IF.IR !== 0 && IF.PC >= 0x00000080 && IF.PC < maxPC) {
-            if (!pipelineMap.has(IF.PC)) {
-                pipelineMap.set(IF.PC, { startCycle: cycle, stages: new Map() });
+        if (IF.IR !== NOP && IF.IR !== 0 && IF.NPC >= 0x00000080 && IF.NPC < maxPC) {
+            if (!pipelineMap.has(IF.NPC)) {
+                pipelineMap.set(IF.NPC, { startCycle: cycle, stages: new Map() });
             }
-            pipelineMap.get(IF.PC).stages.set(cycle, 'IF');
+            pipelineMap.get(IF.NPC).stages.set(cycle, 'IF');
         }
-        if (ID.IR !== NOP && ID.IR !== 0 && ID.PC >= 0x00000080 && ID.PC < maxPC) {
-            if (!pipelineMap.has(ID.PC)) {
-                pipelineMap.set(ID.PC, { startCycle: cycle, stages: new Map() });
+        if (ID.IR !== NOP && ID.IR !== 0 && ID.NPC >= 0x00000080 && ID.NPC < maxPC) {
+            if (!pipelineMap.has(ID.NPC)) {
+                pipelineMap.set(ID.NPC, { startCycle: cycle, stages: new Map() });
             }
-            pipelineMap.get(ID.PC).stages.set(cycle, 'ID');
+            pipelineMap.get(ID.NPC).stages.set(cycle, 'ID');
         }
         if (EX.IR !== NOP && EX.IR !== 0 && EX.PC >= 0x00000080 && EX.PC < maxPC) {
             if (!pipelineMap.has(EX.PC)) {
