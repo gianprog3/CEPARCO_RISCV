@@ -187,7 +187,7 @@
 			<button class="button" id="registers button">Registers</button>
 			<button class="button" id="memory button">Memory</button>
 			<button class="button" id="view memory button">View Memory</button>
-			<textarea class="textbox-register" id="searchMemory">test</textarea>
+			<textarea class="textbox-register" id="searchMemory" placeholder="Memory"></textarea>
 			<button class="button" id="goto button">Goto</button>
 			<button class="button" id="set registers button">Set Registers</button>
 			<button class="button" id="set memory button">Set Memory</button>
@@ -230,7 +230,7 @@
 				</tr>
 				{{#each memory}}
 				<tr>
-					<td>{{this}}</td>
+					<td id="memory-{{@index}}">{{this}}</td>
 					<td><textarea class="textbox-viewmemory" readonly>00</textarea></td>
 				</tr>
 				{{/each}}

@@ -245,68 +245,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function runStep() {
 
-    if (thisIsABranchFlag > 0) {
-        thisIsABranchFlag--;
-    }
+        if (thisIsABranchFlag > 0) {
+            thisIsABranchFlag--;
+        }
 
-    // WB Stage
-    const memOpcode = MEM.IR & 0x7F;
-    let memRd = (MEM.IR >> 7) & 0x1F;
-    WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
-    WB.PC = MEM.PC;
-    if (writesRd(MEM.IR) && memRd !== 0) {
-        registers.set(`x${memRd}`, WB.Rn);
-    }
+        // WB Stage
+        const memOpcode = MEM.IR & 0x7F;
+        let memRd = (MEM.IR >> 7) & 0x1F;
+        WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
+        WB.PC = MEM.PC;
+        if (writesRd(MEM.IR) && memRd !== 0) {
+            registers.set(`x${memRd}`, WB.Rn);
+        }
 
-    // Branch instruction
-    if (thisIsABranchFlag === 0 && branchTarget !== 0) {
+        // Branch instruction
+        if (thisIsABranchFlag === 0 && branchTarget !== 0) {
 
-        if (IF.PC !== 0 && IF.PC < branchTarget) {
-            IF.IR = NOP;
-            IF.PC = 0;
-            IF.NPC = 0;
-        }
-        if (ID.PC !== 0 && ID.PC < branchTarget) {
-            ID.IR = NOP;
-            ID.PC = 0;
-            ID.NPC = 0;
-            ID.A = 0;
-            ID.B = 0;
-            ID.IMM = 0;
-        }
-        if (EX.PC !== 0 && EX.PC < branchTarget) {
-            EX.IR = NOP;
-            EX.PC = 0;
-            EX.ALUOUTPUT = 0;
-            EX.B = 0;
-            EX.COND = 0;
-        }
-        if (MEM.PC !== 0 && MEM.PC < branchTarget) {
-            MEM.IR = NOP;
-            MEM.PC = 0;
-            MEM.ALUOUTPUT = 0;
-            MEM.LMD = 0;
-            MEM.MEMALUOUTPUT = 0;
-        }
-        const targetAlreadyFetched =
-            (IF.PC !== 0 && IF.PC >= branchTarget) ||
-            (ID.PC !== 0 && ID.PC >= branchTarget) ||
-            (EX.PC !== 0 && EX.PC >= branchTarget) ||
-            (MEM.PC !== 0 && MEM.PC >= branchTarget);
+            if (IF.PC !== 0 && IF.PC < branchTarget) {
+                IF.IR = NOP;
+                IF.PC = 0;
+                IF.NPC = 0;
+            }
+            if (ID.PC !== 0 && ID.PC < branchTarget) {
+                ID.IR = NOP;
+                ID.PC = 0;
+                ID.NPC = 0;
+                ID.A = 0;
+                ID.B = 0;
+                ID.IMM = 0;
+            }
+            if (EX.PC !== 0 && EX.PC < branchTarget) {
+                EX.IR = NOP;
+                EX.PC = 0;
+                EX.ALUOUTPUT = 0;
+                EX.B = 0;
+                EX.COND = 0;
+            }
+            if (MEM.PC !== 0 && MEM.PC < branchTarget) {
+                MEM.IR = NOP;
+                MEM.PC = 0;
+                MEM.ALUOUTPUT = 0;
+                MEM.LMD = 0;
+                MEM.MEMALUOUTPUT = 0;
+            }
+            const targetAlreadyFetched =
+                (IF.PC !== 0 && IF.PC >= branchTarget) ||
+                (ID.PC !== 0 && ID.PC >= branchTarget) ||
+                (EX.PC !== 0 && EX.PC >= branchTarget) ||
+                (MEM.PC !== 0 && MEM.PC >= branchTarget);
 
-        if (!targetAlreadyFetched) {
-            const irAtTarget = readWord(branchTarget, memory);
-            forcedIF = {
-                IR: irAtTarget !== 0 ? irAtTarget : NOP,
-                PC: branchTarget,
-                NPC: branchTarget + 4
-            };
-            forceIFThisCycle = true;
-            currentPC = branchTarget + 4;
-        } else {
-            if (currentPC <= branchTarget) currentPC = branchTarget + 4;
-        }
-        branchTarget = 0;
+            if (!targetAlreadyFetched) {
+                const irAtTarget = readWord(branchTarget, memory);
+                forcedIF = {
+                    IR: irAtTarget !== 0 ? irAtTarget : NOP,
+                    PC: branchTarget,
+                    NPC: branchTarget + 4
+                };
+                forceIFThisCycle = true;
+                currentPC = branchTarget + 4;
+            } else {
+                if (currentPC <= branchTarget) currentPC = branchTarget + 4;
+            }
+            branchTarget = 0;
         }
 
         // ID stage
@@ -345,6 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
             newMEM.LMD = newMEM.MEMALUOUTPUT;
         } else if (exOpcode === 0b0100011) { // SW
             writeWord(EX.ALUOUTPUT, EX.B, memory);
+            newMEM.ALUOUTPUT = 0;
+            newMEM.MEMALUOUTPUT = EX.ALUOUTPUT;
         }
         Object.assign(MEM, newMEM);
 
@@ -559,7 +561,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         pipelineTable.innerHTML = '';
 
-        // --- Header Setup (Cycle Numbers) ---
         const tableHead = document.createElement('thead');
         const headerRow = document.createElement('tr');
         const instructionHeaderCell = document.createElement('th');
@@ -575,23 +576,19 @@ document.addEventListener('DOMContentLoaded', () => {
         tableHead.appendChild(headerRow);
         pipelineTable.appendChild(tableHead);
 
-        // --- Body Setup (Latch Contents) ---
         const tableBody = document.createElement('tbody');
         const registerNames = Array.from(pipelineRegisterMap.keys());
         for (const regName of registerNames) {
             const history = pipelineRegisterMap.get(regName);
             const rowTr = document.createElement('tr');
 
-            // Latch Name Cell
             const tdName = document.createElement('td');
             tdName.textContent = regName;
             rowTr.appendChild(tdName);
 
-            // Cycle Data Cells
             for (let currentCycle = 1; currentCycle <= cycle; currentCycle++) {
                 const td = document.createElement('td');
                 if (regName != " " && regName != "  " && regName != "   " && regName != "    ") {
-                    // Use array index (cycle - 1) since we used push()
                     const entry = history[currentCycle - 1];
                     if (regName == "EX/MEM.COND") {
                         td.textContent = entry;
@@ -604,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             td.textContent = entry.toString(16).padStart(8, '0').toUpperCase();
                         }
                     }
+
                     else {
                         td.textContent = entry.toString(16).padStart(8, '0').toUpperCase();
                     }
@@ -702,6 +700,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         alert("Memory set.");
     };
+
+    document.getElementById("goto button").onclick = function () {
+
+        const memoryLoc = document.getElementById("searchMemory").value;
+        const index = parseInt(memoryLoc, 16);
+
+        if (index < 0 || index > 256 || !index) {
+            alert(`"${memoryLoc}" is not a valid memory location`);
+        } else {
+            const memoryTable = document.getElementById("memory-" + index);
+            memoryTable.scrollIntoView({ behavior: "smooth", container: "nearest" });
+        }
+    }
 
     document.getElementById("editor button").onclick = function () {
         document.getElementById("editor").style.display = "flex";
