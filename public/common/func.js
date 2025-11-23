@@ -379,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     aluOut = ID.A + ID.IMM;
                     break;
                 case 0b1100011: // BEQ/BNE
+                    aluOut = ID.NPC + ID.IMM;
                     if (funct3 === 0) cond = (ID.A === ID.B) ? 1 : 0; // BEQ
                     else if (funct3 === 1) cond = (ID.A !== ID.B) ? 1 : 0; // BNE
                     if (cond === 1 && thisIsABranchFlag === 0) {
@@ -434,6 +435,20 @@ document.addEventListener('DOMContentLoaded', () => {
             newID.PC = IF.PC;
         } else {
             newID = { ...ID };
+            const idIR = ID.IR;
+            const idOpcode = idIR & 0x7F;
+            const rs1 = (idIR >> 15) & 0x1F;
+            const rs2 = (idIR >> 20) & 0x1F;
+            let type = '';
+
+            if (idOpcode === 0b0010011 || idOpcode === 0b0000011) type = 'I';
+            else if (idOpcode === 0b0100011) type = 'S';
+            else if (idOpcode === 0b1100011) type = 'B';
+
+            const imm = getImm(idIR, type);
+            newID.A = registers.get(`x${rs1}`) || 0;
+            newID.B = registers.get(`x${rs2}`) || 0;
+            newID.IMM = imm;
         }
         Object.assign(ID, newID);
 
@@ -705,7 +720,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const memoryLoc = document.getElementById("searchMemory").value;
         const index = parseInt(memoryLoc, 16);
-        console.log(index);
         if (index < 0 || index > 256 || Number.isNaN(index)) {
             alert(`"${memoryLoc}" is not a valid memory location`);
         } else {

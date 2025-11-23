@@ -46,7 +46,6 @@ export function parseLines(text) {
                 words[1] = words[1].toLowerCase();
                 words[2] = words[2].toLowerCase();
             }
-            console.log(words);
             codeLines.push(words);
         }
     });
@@ -344,13 +343,8 @@ function assembleBranchInstruction(data, instruction, PC) {
     let jmp = instruction[3] + ":";
     let toPC = PC.get(jmp);
     let fromPC = PC.get(instruction[0] + " " + instruction[1] + " " + instruction[2] + " " + instruction[3]);
-    toPC = parseInt(toPC, 16);
-    fromPC = parseInt(fromPC, 16);
-    const intOffset = toPC - fromPC;		//get offset
-    const imm = intOffset >> 1;				//shift
-    const mask = (1 << 13) - 1;				//13 bit binary template
-    const unsignedValue = imm & mask;		//use template on imm
-    const immString = unsignedValue.toString(2).padStart(13, '0');
+    const intOffset = toPC - fromPC; //get offset
+    const immString = intOffset.toString(2).padStart(12, '0');
 
     //get binary
     let opcodeBin = opcode.toString(2).padStart(7, "0");
