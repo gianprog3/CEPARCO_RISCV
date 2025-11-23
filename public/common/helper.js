@@ -41,7 +41,12 @@ export function parseLines(text) {
         if (line.trim() !== "") {
             let words = line.trim().split(/\s+/);
             words = words.map(word => word.replace(/,/g, ""));
-
+            if (!words[0].endsWith(":")) {
+                words[0] = words[0].toUpperCase();
+                words[1] = words[1].toLowerCase();
+                words[2] = words[2].toLowerCase();
+            }
+            console.log(words);
             codeLines.push(words);
         }
     });
