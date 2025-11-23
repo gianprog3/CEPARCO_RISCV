@@ -254,7 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let memRd = (MEM.IR >> 7) & 0x1F;
         WB.Rn = (memOpcode === 0b0000011) ? MEM.LMD : MEM.ALUOUTPUT;
         WB.PC = MEM.PC;
-        if (writesRd(MEM.IR) && memRd !== 0) {
+        if (memOpcode === 0b1100011) {
+            WB.Rn = 0x00000000;
+        }
+        else if (writesRd(MEM.IR) && memRd !== 0) {
             registers.set(`x${memRd}`, WB.Rn);
         }
 
@@ -338,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             IR: EX.IR,
             ALUOUTPUT: EX.ALUOUTPUT,
             LMD: 0x00000000,
-            MEMALUOUTPUT: readWord(EX.ALUOUTPUT, memory),
+            MEMALUOUTPUT: 0x00000000,
             PC: EX.PC
         };
         if (exOpcode === 0b0000011) { // LW
