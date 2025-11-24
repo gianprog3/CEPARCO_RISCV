@@ -63,7 +63,7 @@ Project update:
 
 ### Design Methodology: 
 
-We implemented the project using javascript and handlebars as the file management and code readability was easy to understand. It can be thought of as an easier HTML + java approach as there is less need for encapsulation and formatting templates are available in handlebars (i.e. create a row of tables using an iterative #each function). This environment was also familiar to most of the group as most of us took CCAPDEV and were thought how to use the programming languages.
+We implemented the project using Javascript and handlebars as the file management and code readability was easy to understand. It can be thought of as an easier HTML + java approach as there is less need for encapsulation and formatting templates are available in handlebars (i.e. create a row of tables using an iterative #each function). This environment was also familiar to most of the group as most of us took CCAPDEV and were thought how to use the programming languages.
 
 The design of the interface itself is loosely inspired by the RARS program, with the main editor window taking a majority of the screen, and the register values displayed on the right side of the screen. We decided to omit the use of the error/compile screen and instead make it take the same space as the editor screen to make way for the pipeline map, and to have a uniformed approach in displaying each tab (editor, errors, pipeline map, risc-v registers). The same goes with the memory display.
 
@@ -73,7 +73,9 @@ The program's instructions were verified by doing the opcode instructions manual
 
 ### AHA Moments:
 
+Because we observed stalled instructions latching onto outdated register values despite being paused, we realized that simply freezing a pipeline stage is insufficient. We discovered that effective hazard resolution requires an active state of waiting, where the processor must continuously re-read the register file during the stall to capture new data the instant it is written back.
 
+Because we encountered synchronization issues where the user interface displayed mismatched instructions, we realized that a processor's internal execution state fundamentally differs from its observable state. We discovered that while the logic inherently looks forward to prepare the next cycle, the visualizer must reflect the current reality, needing strict, separate definitions for NPC and PC to maintain accuracy.
 
 
 
