@@ -63,9 +63,18 @@ Project update:
 
 ### Design Methodology: 
 
+We implemented the project using javascript and handlebars as the file management and code readability was easy to understand. It can be thought of as an easier HTML + java approach as there is less need for encapsulation and formatting templates are available in handlebars (i.e. create a row of tables using an iterative #each function). This environment was also familiar to most of the group as most of us took CCAPDEV and were thought how to use the programming languages.
+
+The design of the interface itself is loosely inspired by the RARS program, with the main editor window taking a majority of the screen, and the register values displayed on the right side of the screen. We decided to omit the use of the error/compile screen and instead make it take the same space as the editor screen to make way for the pipeline map, and to have a uniformed approach in displaying each tab (editor, errors, pipeline map, risc-v registers). The same goes with the memory display.
+
 ### Testing Methodology:
 
+The program's instructions were verified by doing the opcode instructions manually, especially with the branching conditions, and it helped fix any unwanted behavior, especially with arithmetic on hexadecimal/binary values.
+
 ### AHA Moments:
+
+
+
 
 
 
