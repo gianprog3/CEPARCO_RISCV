@@ -39,7 +39,7 @@ Project update:
 Project update:
 - Fully functional program
 
-Screenshots:
+### Screenshots:
 
 - OpCode generation:
   - <img width="1449" height="248" alt="image" src="https://github.com/user-attachments/assets/68a83429-6d49-49cc-8553-4c8dac8a73f3" />
@@ -61,7 +61,11 @@ Screenshots:
   - <img width="1443" height="495" alt="image" src="https://github.com/user-attachments/assets/4fd732ce-ff0f-4fa6-b8a7-caa72e677102" />
 
 
+### Design Methodology: 
 
+### Testing Methodology:
+
+### AHA Moments:
 
 
 
