@@ -623,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let currentCycle = 1; currentCycle <= cycle; currentCycle++) {
                 const td = document.createElement('td');
                 if (regName != " " && regName != "  " && regName != "   " && regName != "    ") {
+                    let hexString;
                     const entry = history[currentCycle - 1];
                     if (regName == "EX/MEM.COND") {
                         td.textContent = entry;
@@ -632,12 +633,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             td.textContent = "N/A";
                         }
                         else {
-                            td.textContent = entry.toString(16).padStart(8, '0').toUpperCase();
+                            if (entry < 0) {
+                                hexString = (entry >>> 0).toString(16);
+                            } else {
+                                hexString = entry.toString(16);
+                            }
+                            td.textContent = hexString.padStart(8, '0').toUpperCase();
                         }
                     }
 
                     else {
-                        td.textContent = entry.toString(16).padStart(8, '0').toUpperCase();
+                        if (entry < 0) {
+                            hexString = (entry >>> 0).toString(16);
+                        } else {
+                            hexString = entry.toString(16);
+                        }
+                        td.textContent = hexString.padStart(8, '0').toUpperCase();
                     }
                 }
 
