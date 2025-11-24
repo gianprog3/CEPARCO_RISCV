@@ -35,6 +35,7 @@ Project update:
 
 ## Integrating Project Milestone #3
 
+https://youtu.be/2PLJ62RhWpM
 
 Project update:
 - Fully functional program
@@ -76,6 +77,7 @@ The program's instructions were verified by doing the opcode instructions manual
 Because we observed stalled instructions latching onto outdated register values despite being paused, we realized that simply freezing a pipeline stage is insufficient. We discovered that effective hazard resolution requires an active state of waiting, where the processor must continuously re-read the register file during the stall to capture new data the instant it is written back.
 
 Because we encountered synchronization issues where the user interface displayed mismatched instructions, we realized that a processor's internal execution state fundamentally differs from its observable state. We discovered that while the logic inherently looks forward to prepare the next cycle, the visualizer must reflect the current reality, needing strict, separate definitions for NPC and PC to maintain accuracy.
+
 
 
 
