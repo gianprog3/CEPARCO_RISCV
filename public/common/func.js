@@ -345,7 +345,14 @@ document.addEventListener('DOMContentLoaded', () => {
             PC: EX.PC
         };
         if (exOpcode === 0b0000011) { // LW
-            newMEM.LMD = newMEM.MEMALUOUTPUT;
+            const byte0 = Number(memory[EX.ALUOUTPUT]);
+            const byte1 = Number(memory[EX.ALUOUTPUT + 1]);
+            const byte2 = Number(memory[EX.ALUOUTPUT + 2]);
+            const byte3 = Number(memory[EX.ALUOUTPUT + 3]);
+
+            let memoryData = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
+            newMEM.ALUOUTPUT = 0x00000000;
+            newMEM.LMD = memoryData;
         } else if (exOpcode === 0b0100011) { // SW
             writeWord(EX.ALUOUTPUT, EX.B, memory);
             newMEM.ALUOUTPUT = 0;
