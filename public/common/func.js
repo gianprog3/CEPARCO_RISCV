@@ -99,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         programCounter += 4;
                     }
                 }
-                console.log(PC);
                 maxPC = programCounter;
             }
             else {
@@ -173,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         function loop() {
             if (!isRunning) return;
             runStep();
-            console.log(currentPC + maxPC);
             if ((IF.IR === NOP && ID.IR === NOP && EX.IR === NOP && MEM.IR === NOP && currentPC >= maxPC) || currentPC >= maxPC + 4) {
                 isRunning = false;
                 return;
@@ -485,7 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
             newIF = { ...IF };
         }
         Object.assign(IF, newIF);
-        console.log(currentPC);
 
         cycle++;
         recordStages();
